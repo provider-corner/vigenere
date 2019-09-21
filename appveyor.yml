@@ -11,10 +11,10 @@ before_build:
   - ps: >-
       If ($env:Platform -Match "x86") {
           $env:VCVARS_PLATFORM="x86"
-          $env:OPENSSL_TARGET="VC-WIN32"
+          $env:OPENSSL_TARGET="VC-WIN32 no-asm"
       } Else {
           $env:VCVARS_PLATFORM="amd64"
-          $env:OPENSSL_TARGET="VC-WIN64A"
+          $env:OPENSSL_TARGET="VC-WIN64A no-asm"
       }
   - ps: $env:VSCOMNTOOLS=(Get-Content ("env:VS" + "$env:VSVER" + "0COMNTOOLS"))
   - call "%VSCOMNTOOLS%\..\..\VC\vcvarsall.bat" %VCVARS_PLATFORM%
