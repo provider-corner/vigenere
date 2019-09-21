@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/provider-corner/vigenere.svg?branch=master)](https://travis-ci.com/provider-corner/vigenere)
+
 ![CC0](http://i.creativecommons.org/p/zero/1.0/88x15.png)
 
 Vignère cipher provider

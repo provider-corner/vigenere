@@ -1,0 +1,18 @@
+language: c
+
+compiler:
+  - clang
+  - gcc
+
+before_script:
+  - openssl_install_prefix=`pwd`/openssl-install
+  - git clone https://github.com/openssl/openssl.git openssl
+  - ( cd openssl;
+      ./config --prefix="$openssl_install_prefix" && make -s install_dev )
+
+script:
+  - mkdir _build
+  - cd _build
+  - cmake -DOPENSSL_ROOT_DIR="$openssl_install_prefix" ..
+  - make
+  - make test
