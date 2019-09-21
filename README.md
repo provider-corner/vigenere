@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.com/provider-corner/vigenere.svg?branch=master)](https://travis-ci.com/provider-corner/vigenere)
+[![Build status](https://ci.appveyor.com/api/projects/status/kd0h87r4vljwm0qp/branch/master?svg=true)](https://ci.appveyor.com/project/provider-corner/vigenere/branch/master)
 
 ![CC0](http://i.creativecommons.org/p/zero/1.0/88x15.png)
 
