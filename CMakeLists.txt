@@ -10,9 +10,10 @@ enable_testing()
 find_package(OpenSSL 3.0 REQUIRED)
 include_directories(${OPENSSL_INCLUDE_DIR})
 
-# Main provider
+# Provider module
 add_library(vigenere MODULE vigenere.c)
 set_target_properties(vigenere PROPERTIES PREFIX "" OUTPUT_NAME "vigenere")
+target_link_libraries(vigenere ${OPENSSL_CRYPTO_LIBRARY})
 
 # Testing
 add_executable(test_vigenere test_vigenere.c)
