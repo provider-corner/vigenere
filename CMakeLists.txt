@@ -9,6 +9,12 @@ enable_testing()
 
 find_package(OpenSSL 3.0 REQUIRED)
 include_directories(${OPENSSL_INCLUDE_DIR})
+if (DEFINED MSVC_VERSION)
+  # FindOpenSSL.cmake assumes http://www.slproweb.com/products/Win32OpenSSL.html
+  # and gets it quote wrong when an install from OpenSSL source is present
+  set(OPENSSL_CRYPTO_LIBRARY ${OPENSSL_ROOT_DIR}/lib/libcrypto.lib)
+  set(OPENSSL_SSL_LIBRARY ${OPENSSL_ROOT_DIR}/lib/libssl.lib)
+endif()
 
 # Provider module
 add_library(vigenere MODULE vigenere.c)
