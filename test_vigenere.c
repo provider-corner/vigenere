@@ -1,3 +1,5 @@
+/* CC0 license applied, see LICENCE.md */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,7 +12,7 @@
 #define T(e)                                    \
   if (!(e)) {                                   \
     ERR_print_errors_fp(stderr);                \
-    OpenSSLDie(__FILE__, __LINE__, #e);         \
+    OPENSSL_die(#e, __FILE__, __LINE__);        \
   }
 #define cRED    "\033[1;31m"
 #define cDRED   "\033[0;31m"
@@ -63,13 +65,17 @@ int main()
   T((ctx = EVP_CIPHER_CTX_new()) != NULL);
   EVP_CIPHER_free(c);         /* ctx holds on to the cipher */
   /* Test encryption */
+  printf(cBLUE "Testing init without a key" cNORM "\n");
+  T(EVP_CipherInit(ctx, c, NULL, NULL, 1));
+  printf(cBLUE "Testing setting key length to %lu" cNORM "\n", sizeof(key));
+  T(EVP_CIPHER_CTX_set_key_length(ctx, sizeof(key)) > 0);
   printf(cBLUE "Testing encryption" cNORM "\n");
-  T(EVP_CipherInit(ctx, c, key, NULL, 1));
+  T(EVP_CipherInit(ctx, NULL, key, NULL, 1));
   T(EVP_CipherUpdate(ctx, ciphertext, &outl, plaintext, sizeof(plaintext)));
   T(EVP_CipherFinal(ctx, ciphertext + outl, &outlf));
   /* Test decryption */
   printf(cBLUE "Testing decryption" cNORM "\n");
-  T(EVP_CipherInit(ctx, c, key, NULL, 0));
+  T(EVP_CipherInit(ctx, NULL, key, NULL, 0));
   T(EVP_CipherUpdate(ctx, plaintext2, &outl2, ciphertext, outl));
   T(EVP_CipherFinal(ctx, plaintext2 + outl2, &outl2f));
 
