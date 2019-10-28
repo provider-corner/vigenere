@@ -41,8 +41,10 @@ static void vigenere_err_set_debug(OSSL_PROVIDER *prov, const char *file,
 
 /* The error reasons used here */
 #define VIGENERE_NO_KEYLEN_SET          1
+#define VIGENERE_ONGOING_OPERATION      2
 static const OSSL_ITEM reason_strings[] = {
     { VIGENERE_NO_KEYLEN_SET, "no key length has been set" },
+    { VIGENERE_ONGOING_OPERATION, "an operation is underway" },
     { 0, NULL }
 };
 
@@ -81,6 +83,7 @@ struct vigenere_ctx_st {
     unsigned char *key;         /* A copy of the key */
     size_t keypos;              /* The current position in the key */
     int enc;                    /* 0 = decrypt, 1 = encrypt */
+    int ongoing;                /* 1 = operation has started */
 };
 
 static void *vigenere_newctx(void *vprovctx)
@@ -104,6 +107,7 @@ static void vigenere_cleanctx(void *vctx)
     ctx->key = NULL;
     ctx->keypos = 0;
     ctx->enc = 0;
+    ctx->ongoing = 0;
 }
 
 static void *vigenere_dupctx(void *vctx)
@@ -128,6 +132,7 @@ static void *vigenere_dupctx(void *vctx)
 
     dst->keypos = src->keypos;
     dst->enc = src->enc;
+    dst->ongoing = src->ongoing;
 
     return dst;
 }
@@ -158,6 +163,7 @@ static int vigenere_encrypt_init(void *vctx,
     memcpy(ctx->key, key, keyl);
     ctx->keyl = keyl;
     ctx->keypos = 0;
+    ctx->ongoing = 0;
     return 1;
 }
 
@@ -181,6 +187,7 @@ static int vigenere_decrypt_init(void *vctx,
         ctx->key[i] = 256 - key[i];
     ctx->keyl = keyl;
     ctx->keypos = 0;
+    ctx->ongoing = 0;
     return 1;
 }
 
@@ -196,6 +203,7 @@ static int vigenere_update(void *vctx,
     if (outsz < inl || out == NULL)
         return 0;
 
+    ctx->ongoing = 1;
     *outl = 0;
     for (; inl-- > 0; (*outl)++) {
         *out++ = (*in++ + ctx->key[ctx->keypos++]) % 256;
@@ -209,7 +217,11 @@ static int vigenere_update(void *vctx,
 static int vigenere_final(void *vctx,
                           unsigned char *out, size_t *outl, size_t outsz)
 {
+    struct vigenere_ctx_st *ctx = vctx;
+
     *outl = 0;
+    ctx->ongoing = 0;
+
     return 1;
 }
 
@@ -271,6 +283,12 @@ static int vigenere_set_ctx_params(void *vctx, const OSSL_PARAM params[])
 {
     struct vigenere_ctx_st *ctx = vctx;
     const OSSL_PARAM *p;
+
+    if (ctx->ongoing) {
+        vigenere_err(ctx->prov, VIGENERE_ONGOING_OPERATION, NULL);
+        vigenere_err_set_debug(ctx->prov, __FILE__, __LINE__, __func__);
+        return 0;
+    }
 
     if ((p = OSSL_PARAM_locate_const(params, "keylen")) != NULL
         && !OSSL_PARAM_get_size_t(p, &ctx->keyl))
