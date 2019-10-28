@@ -8,16 +8,54 @@
 #include <openssl/core_numbers.h>
 #include <openssl/params.h>
 
-typedef void (*funcptr_t)(void);
+/*********************************************************************
+ *
+ *  Error handling
+ *
+ *****/
 
-struct vigenere_ctx_st {
-    unsigned char *key;
-    size_t keyl;
-    size_t keypos;
-    int enc;
+/*
+ * libcrypto gives providers the tools to create error routines similar
+ * to the ones defined in <openssl/err.h>
+ */
+static OSSL_core_new_error_fn *c_new_error = NULL;
+static OSSL_core_set_error_debug_fn *c_set_error_debug = NULL;
+static OSSL_core_vset_error_fn *c_vset_error = NULL;
+
+static void vigenere_err(OSSL_PROVIDER *prov, uint32_t reason,
+                         const char *fmt, ...)
+{
+    va_list ap;
+
+    va_start(ap, fmt);
+    c_new_error(prov);
+    c_vset_error(prov, reason, fmt, ap);
+    va_end(ap);
+}
+
+static void vigenere_err_set_debug(OSSL_PROVIDER *prov, const char *file,
+                                   int line, const char *func)
+{
+    c_set_error_debug(prov, file, line, func);
+}
+
+/* The error reasons used here */
+#define VIGENERE_NO_KEYLEN_SET          1
+static const OSSL_ITEM reason_strings[] = {
+    { VIGENERE_NO_KEYLEN_SET, "no key length has been set" },
+    { 0, NULL }
 };
 
-/* Forward declarations to ensure we get signatures right */
+/*********************************************************************
+ *
+ *  The implementation itself
+ *
+ *****/
+
+/*
+ * Forward declarations to ensure we get signatures right.  All the
+ * OSSL_OP_* types come from <openssl/core_numbers.h>
+ */
 static OSSL_provider_query_operation_fn vigenere_operation;
 static OSSL_OP_cipher_newctx_fn vigenere_newctx;
 static OSSL_OP_cipher_encrypt_init_fn vigenere_encrypt_init;
@@ -33,12 +71,26 @@ static OSSL_OP_cipher_get_ctx_params_fn vigenere_get_ctx_params;
 static OSSL_OP_cipher_settable_ctx_params_fn vigenere_settable_ctx_params;
 static OSSL_OP_cipher_gettable_ctx_params_fn vigenere_gettable_ctx_params;
 
+/*
+ * The context used throughout all these functions.
+ */
+struct vigenere_ctx_st {
+    void *prov;
+    size_t keyl;                /* The configured length of the key */
+
+    unsigned char *key;         /* A copy of the key */
+    size_t keypos;              /* The current position in the key */
+    int enc;                    /* 0 = decrypt, 1 = encrypt */
+};
+
 static void *vigenere_newctx(void *vprovctx)
 {
     struct vigenere_ctx_st *ctx = malloc(sizeof(*ctx));
 
-    if (ctx != NULL)
+    if (ctx != NULL) {
         memset(ctx, 0, sizeof(*ctx));
+        ctx->prov = vprovctx;
+    }
     return ctx;
 }
 
@@ -63,6 +115,7 @@ static void *vigenere_dupctx(void *vctx)
     if (dst == NULL)
         return NULL;
 
+    dst->prov = src->prov;
     dst->keyl = src->keyl;
 
     if (src->key != NULL) {
@@ -95,8 +148,11 @@ static int vigenere_encrypt_init(void *vctx,
 {
     struct vigenere_ctx_st *ctx = vctx;
 
-    if (keyl == (size_t)-1)
+    if (keyl == (size_t)-1) {
+        vigenere_err(ctx->prov, VIGENERE_NO_KEYLEN_SET, NULL);
+        vigenere_err_set_debug(ctx->prov, __FILE__, __LINE__, __func__);
         return 0;
+    }
     vigenere_cleanctx(ctx);
     ctx->key = malloc(keyl);
     memcpy(ctx->key, key, keyl);
@@ -114,8 +170,11 @@ static int vigenere_decrypt_init(void *vctx,
     struct vigenere_ctx_st *ctx = vctx;
     size_t i;
 
-    if (keyl == (size_t)-1)
+    if (keyl == (size_t)-1) {
+        vigenere_err(ctx->prov, VIGENERE_NO_KEYLEN_SET, NULL);
+        vigenere_err_set_debug(ctx->prov, __FILE__, __LINE__, __func__);
         return 0;
+    }
     vigenere_cleanctx(ctx);
     ctx->key = malloc(keyl);
     for (i = 0; i < keyl; i++)
@@ -219,6 +278,16 @@ static int vigenere_set_ctx_params(void *vctx, const OSSL_PARAM params[])
     return 1;
 }
 
+
+/*********************************************************************
+ *
+ *  Setup
+ *
+ *****/
+
+typedef void (*funcptr_t)(void);
+
+/* The Vigenere dispatch table */
 static const OSSL_DISPATCH vigenere_functions[] = {
     { OSSL_FUNC_CIPHER_NEWCTX, (funcptr_t)vigenere_newctx },
     { OSSL_FUNC_CIPHER_ENCRYPT_INIT, (funcptr_t)vigenere_encrypt_init },
@@ -238,11 +307,13 @@ static const OSSL_DISPATCH vigenere_functions[] = {
     { 0, NULL }
 };
 
+/* The table of ciphers this provider offers */
 static const OSSL_ALGORITHM vigenere_ciphers[] = {
     { "vigenere", NULL, vigenere_functions },
     { NULL , NULL, NULL }
 };
 
+/* The function that returns the appropriate algorithm table per operation */
 static const OSSL_ALGORITHM *vigenere_operation(void *vprovctx,
                                                 int operation_id,
                                                 const int *no_cache)
@@ -254,8 +325,16 @@ static const OSSL_ALGORITHM *vigenere_operation(void *vprovctx,
     return NULL;
 }
 
+static const OSSL_ITEM *vigenere_get_reason_strings(void *provctx)
+{
+    return reason_strings;
+}
+
+/* The base dispatch table */
 static const OSSL_DISPATCH provider_functions[] = {
     { OSSL_FUNC_PROVIDER_QUERY_OPERATION, (funcptr_t)vigenere_operation },
+    { OSSL_FUNC_PROVIDER_GET_REASON_STRINGS,
+      (funcptr_t)vigenere_get_reason_strings },
     { 0, NULL }
 };
 
@@ -264,6 +343,26 @@ int OSSL_provider_init(const OSSL_PROVIDER *provider,
                        const OSSL_DISPATCH **out,
                        void **vprovctx)
 {
+    for (; in->function_id != 0; in++)
+        switch (in->function_id) {
+        case OSSL_FUNC_CORE_NEW_ERROR:
+            c_new_error = OSSL_get_core_new_error(in);
+            break;
+        case OSSL_FUNC_CORE_SET_ERROR_DEBUG:
+            c_set_error_debug = OSSL_get_core_set_error_debug(in);
+            break;
+        case OSSL_FUNC_CORE_VSET_ERROR:
+            c_vset_error = OSSL_get_core_vset_error(in);
+            break;
+        }
+
     *out = provider_functions;
+
+    /*
+     * This provider has no need of its own context, so it simply passes
+     * the provider object, which will get passed back to diverse functions
+     * and must be present for our error macro to work right.
+     */
+    *vprovctx = (void *)provider;
     return 1;
 }
