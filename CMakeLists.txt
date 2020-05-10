@@ -25,8 +25,14 @@ target_link_libraries(vigenere ${OPENSSL_CRYPTO_LIBRARY})
 add_library(test_common STATIC test_common.c)
 add_executable(test_vigenere test_vigenere.c)
 target_link_libraries(test_vigenere test_common ${OPENSSL_CRYPTO_LIBRARY})
+add_executable(test_vigenere_err test_vigenere_err.c)
+target_link_libraries(test_vigenere_err test_common ${OPENSSL_CRYPTO_LIBRARY})
 add_test(NAME vigenere COMMAND test_vigenere)
 set_tests_properties(vigenere
+  PROPERTIES ENVIRONMENT "OPENSSL_MODULES=${CMAKE_BINARY_DIR}"
+  )
+add_test(NAME vigenere_err COMMAND test_vigenere_err)
+set_tests_properties(vigenere_err
   PROPERTIES ENVIRONMENT "OPENSSL_MODULES=${CMAKE_BINARY_DIR}"
   )
 
