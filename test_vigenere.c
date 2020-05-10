@@ -9,37 +9,7 @@
 #include <openssl/core.h>
 #include <openssl/provider.h>
 
-#define T(e)                                    \
-  if (!(e)) {                                   \
-    ERR_print_errors_fp(stderr);                \
-    OPENSSL_die(#e, __FILE__, __LINE__);        \
-  }
-#define cRED    "\033[1;31m"
-#define cDRED   "\033[0;31m"
-#define cGREEN  "\033[1;32m"
-#define cDGREEN "\033[0;32m"
-#define cBLUE   "\033[1;34m"
-#define cDBLUE  "\033[0;34m"
-#define cNORM   "\033[m"
-#define TEST_ASSERT(e)                                  \
-  {                                                     \
-    if (!(test = (e)))                                  \
-      printf(cRED "  Test FAILED" cNORM "\n");          \
-    else                                                \
-      printf(cGREEN "  Test passed" cNORM "\n");        \
-  }
-
-static void hexdump(const void *ptr, size_t len)
-{
-    const unsigned char *p = ptr;
-    size_t i, j;
-
-    for (i = 0; i < len; i += j) {
-        for (j = 0; j < 16 && i + j < len; j++)
-            printf("%s%02x", j? "" : " ", p[i + j]);
-    }
-    printf("\n");
-}
+#include "test_common.h"
 
 static const unsigned char plaintext[] = "Ceasar's trove of junk";
 static const unsigned char key[] =
