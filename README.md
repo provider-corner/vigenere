@@ -3,8 +3,8 @@
 
 ![CC0](http://i.creativecommons.org/p/zero/1.0/88x15.png)
 
-Vignère cipher provider
-=======================
+Vigenère cipher provider
+========================
 
 This is a very small demonstration that shows the minimum required
 things for a cipher in an OpenSSL 3.0 provider module.
