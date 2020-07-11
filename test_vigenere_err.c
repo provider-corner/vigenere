@@ -37,12 +37,12 @@ int main()
   /* Test encryption */
   printf(cBLUE "Testing init without a key" cNORM "\n");
   T(EVP_CipherInit(ctx, c, NULL, NULL, 1));
-  printf(cBLUE "Testing setting key length to %lu" cNORM "\n", sizeof(key));
+  printf(cBLUE "Testing setting key length to %zu" cNORM "\n", sizeof(key));
   T(EVP_CIPHER_CTX_set_key_length(ctx, sizeof(key)) > 0);
   printf(cBLUE "Testing encryption" cNORM "\n");
   T(EVP_CipherInit(ctx, NULL, key, NULL, 1));
   T(EVP_CipherUpdate(ctx, ciphertext, &outl, plaintext, sizeof(plaintext)));
-  printf(cBLUE "Testing setting key length to %lu during ongoing operation fails" cNORM "\n",
+  printf(cBLUE "Testing setting key length to %zu during ongoing operation fails" cNORM "\n",
          sizeof(key));
   TF(EVP_CIPHER_CTX_set_key_length(ctx, sizeof(key) - 1) <= 0);
 
