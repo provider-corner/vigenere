@@ -5,7 +5,7 @@
 #include <assert.h>
 
 #include <openssl/core.h>
-#include <openssl/core_numbers.h>
+#include <openssl/core_dispatch.h>
 #include <openssl/params.h>
 
 /*********************************************************************
@@ -18,25 +18,25 @@
  * libcrypto gives providers the tools to create error routines similar
  * to the ones defined in <openssl/err.h>
  */
-static OSSL_core_new_error_fn *c_new_error = NULL;
-static OSSL_core_set_error_debug_fn *c_set_error_debug = NULL;
-static OSSL_core_vset_error_fn *c_vset_error = NULL;
+static OSSL_FUNC_core_new_error_fn *c_new_error = NULL;
+static OSSL_FUNC_core_set_error_debug_fn *c_set_error_debug = NULL;
+static OSSL_FUNC_core_vset_error_fn *c_vset_error = NULL;
 
-static void vigenere_err(OSSL_PROVIDER *prov, uint32_t reason,
+static void vigenere_err(OSSL_CORE_HANDLE *core, uint32_t reason,
                          const char *fmt, ...)
 {
     va_list ap;
 
     va_start(ap, fmt);
-    c_new_error(prov);
-    c_vset_error(prov, reason, fmt, ap);
+    c_new_error(core);
+    c_vset_error(core, reason, fmt, ap);
     va_end(ap);
 }
 
-static void vigenere_err_set_debug(OSSL_PROVIDER *prov, const char *file,
+static void vigenere_err_set_debug(OSSL_CORE_HANDLE *core, const char *file,
                                    int line, const char *func)
 {
-    c_set_error_debug(prov, file, line, func);
+    c_set_error_debug(core, file, line, func);
 }
 
 /* The error reasons used here */
@@ -56,22 +56,22 @@ static const OSSL_ITEM reason_strings[] = {
 
 /*
  * Forward declarations to ensure we get signatures right.  All the
- * OSSL_OP_* types come from <openssl/core_numbers.h>
+ * OSSL_FUNC_* types come from <openssl/core_dispatch.h>
  */
-static OSSL_provider_query_operation_fn vigenere_operation;
-static OSSL_OP_cipher_newctx_fn vigenere_newctx;
-static OSSL_OP_cipher_encrypt_init_fn vigenere_encrypt_init;
-static OSSL_OP_cipher_decrypt_init_fn vigenere_decrypt_init;
-static OSSL_OP_cipher_update_fn vigenere_update;
-static OSSL_OP_cipher_final_fn vigenere_final;
-static OSSL_OP_cipher_dupctx_fn vigenere_dupctx;
-static OSSL_OP_cipher_freectx_fn vigenere_freectx;
-static OSSL_OP_cipher_get_params_fn vigenere_get_params;
-static OSSL_OP_cipher_gettable_params_fn vigenere_gettable_params;
-static OSSL_OP_cipher_set_ctx_params_fn vigenere_set_ctx_params;
-static OSSL_OP_cipher_get_ctx_params_fn vigenere_get_ctx_params;
-static OSSL_OP_cipher_settable_ctx_params_fn vigenere_settable_ctx_params;
-static OSSL_OP_cipher_gettable_ctx_params_fn vigenere_gettable_ctx_params;
+static OSSL_FUNC_provider_query_operation_fn vigenere_operation;
+static OSSL_FUNC_cipher_newctx_fn vigenere_newctx;
+static OSSL_FUNC_cipher_encrypt_init_fn vigenere_encrypt_init;
+static OSSL_FUNC_cipher_decrypt_init_fn vigenere_decrypt_init;
+static OSSL_FUNC_cipher_update_fn vigenere_update;
+static OSSL_FUNC_cipher_final_fn vigenere_final;
+static OSSL_FUNC_cipher_dupctx_fn vigenere_dupctx;
+static OSSL_FUNC_cipher_freectx_fn vigenere_freectx;
+static OSSL_FUNC_cipher_get_params_fn vigenere_get_params;
+static OSSL_FUNC_cipher_gettable_params_fn vigenere_gettable_params;
+static OSSL_FUNC_cipher_set_ctx_params_fn vigenere_set_ctx_params;
+static OSSL_FUNC_cipher_get_ctx_params_fn vigenere_get_ctx_params;
+static OSSL_FUNC_cipher_settable_ctx_params_fn vigenere_settable_ctx_params;
+static OSSL_FUNC_cipher_gettable_ctx_params_fn vigenere_gettable_ctx_params;
 
 /*
  * The context used throughout all these functions.
@@ -334,8 +334,9 @@ static const OSSL_ALGORITHM vigenere_ciphers[] = {
 /* The function that returns the appropriate algorithm table per operation */
 static const OSSL_ALGORITHM *vigenere_operation(void *vprovctx,
                                                 int operation_id,
-                                                const int *no_cache)
+                                                int *no_cache)
 {
+    *no_cache = 0;
     switch (operation_id) {
     case OSSL_OP_CIPHER:
         return vigenere_ciphers;
@@ -356,7 +357,7 @@ static const OSSL_DISPATCH provider_functions[] = {
     { 0, NULL }
 };
 
-int OSSL_provider_init(const OSSL_PROVIDER *provider,
+int OSSL_provider_init(const OSSL_CORE_HANDLE *core,
                        const OSSL_DISPATCH *in,
                        const OSSL_DISPATCH **out,
                        void **vprovctx)
@@ -364,13 +365,13 @@ int OSSL_provider_init(const OSSL_PROVIDER *provider,
     for (; in->function_id != 0; in++)
         switch (in->function_id) {
         case OSSL_FUNC_CORE_NEW_ERROR:
-            c_new_error = OSSL_get_core_new_error(in);
+            c_new_error = OSSL_FUNC_core_new_error(in);
             break;
         case OSSL_FUNC_CORE_SET_ERROR_DEBUG:
-            c_set_error_debug = OSSL_get_core_set_error_debug(in);
+            c_set_error_debug = OSSL_FUNC_core_set_error_debug(in);
             break;
         case OSSL_FUNC_CORE_VSET_ERROR:
-            c_vset_error = OSSL_get_core_vset_error(in);
+            c_vset_error = OSSL_FUNC_core_vset_error(in);
             break;
         }
 
@@ -378,9 +379,9 @@ int OSSL_provider_init(const OSSL_PROVIDER *provider,
 
     /*
      * This provider has no need of its own context, so it simply passes
-     * the provider object, which will get passed back to diverse functions
+     * the core handle, which will get passed back to diverse functions
      * and must be present for our error macro to work right.
      */
-    *vprovctx = (void *)provider;
+    *vprovctx = (void *)core;
     return 1;
 }
