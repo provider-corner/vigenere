@@ -226,7 +226,7 @@ static int vigenere_final(void *vctx,
 }
 
 /* Parameters that libcrypto can get from this implementation */
-static const OSSL_PARAM *vigenere_gettable_params(void)
+static const OSSL_PARAM *vigenere_gettable_params(void *provctx)
 {
     static const OSSL_PARAM table[] = {
         OSSL_PARAM_size_t("blocksize", NULL),
@@ -246,7 +246,7 @@ static int vigenere_get_params(OSSL_PARAM params[])
     return 1;
 }
 
-static const OSSL_PARAM *vigenere_gettable_ctx_params(void)
+static const OSSL_PARAM *vigenere_gettable_ctx_params(void *provctx)
 {
     static const OSSL_PARAM table[] = {
         OSSL_PARAM_size_t("keylen", NULL),
@@ -269,7 +269,7 @@ static int vigenere_get_ctx_params(void *vctx, OSSL_PARAM params[])
 }
 
 /* Parameters that libcrypto can send to this implementation */
-static const OSSL_PARAM *vigenere_settable_ctx_params(void)
+static const OSSL_PARAM *vigenere_settable_ctx_params(void *provctx)
 {
     static const OSSL_PARAM table[] = {
         OSSL_PARAM_size_t("keylen", NULL),

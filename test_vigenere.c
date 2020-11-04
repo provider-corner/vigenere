@@ -20,7 +20,7 @@ static unsigned char plaintext2[sizeof(plaintext)];
 
 int main()
 {
-  OPENSSL_CTX *libctx = NULL;
+  OSSL_LIB_CTX *libctx = NULL;
   EVP_CIPHER *c = NULL;
   EVP_CIPHER_CTX *ctx = NULL;
   int outl = 0, outlf = 0;
