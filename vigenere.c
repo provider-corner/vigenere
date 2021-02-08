@@ -8,36 +8,13 @@
 #include <openssl/core_dispatch.h>
 #include <openssl/params.h>
 
+#include "prov/err.h"
+
 /*********************************************************************
  *
- *  Error handling
+ *  Errors
  *
  *****/
-
-/*
- * libcrypto gives providers the tools to create error routines similar
- * to the ones defined in <openssl/err.h>
- */
-static OSSL_FUNC_core_new_error_fn *c_new_error = NULL;
-static OSSL_FUNC_core_set_error_debug_fn *c_set_error_debug = NULL;
-static OSSL_FUNC_core_vset_error_fn *c_vset_error = NULL;
-
-static void vigenere_err(OSSL_CORE_HANDLE *core, uint32_t reason,
-                         const char *fmt, ...)
-{
-    va_list ap;
-
-    va_start(ap, fmt);
-    c_new_error(core);
-    c_vset_error(core, reason, fmt, ap);
-    va_end(ap);
-}
-
-static void vigenere_err_set_debug(OSSL_CORE_HANDLE *core, const char *file,
-                                   int line, const char *func)
-{
-    c_set_error_debug(core, file, line, func);
-}
 
 /* The error reasons used here */
 #define VIGENERE_NO_KEYLEN_SET          1
@@ -47,6 +24,39 @@ static const OSSL_ITEM reason_strings[] = {
     { VIGENERE_ONGOING_OPERATION, "an operation is underway" },
     { 0, NULL }
 };
+
+/*********************************************************************
+ *
+ *  Provider context
+ *
+ *****/
+
+struct provider_ctx_st {
+    const OSSL_CORE_HANDLE *core_handle;
+    struct proverr_functions_st *proverr_handle;
+};
+
+static void provider_ctx_free(struct provider_ctx_st *ctx)
+{
+    if (ctx != NULL)
+        proverr_free_handle(ctx->proverr_handle);
+    free(ctx);
+}
+
+static struct provider_ctx_st *provider_ctx_new(const OSSL_CORE_HANDLE *core,
+                                                const OSSL_DISPATCH *in)
+{
+    struct provider_ctx_st *ctx;
+
+    if ((ctx = malloc(sizeof(*ctx))) != NULL
+        && (ctx->proverr_handle = proverr_new_handle(core, in)) != NULL) {
+        ctx->core_handle = core;
+    } else {
+        provider_ctx_free(ctx);
+        ctx = NULL;
+    }
+    return ctx;
+}
 
 /*********************************************************************
  *
@@ -77,7 +87,8 @@ static OSSL_FUNC_cipher_gettable_ctx_params_fn vigenere_gettable_ctx_params;
  * The context used throughout all these functions.
  */
 struct vigenere_ctx_st {
-    void *prov;
+    struct provider_ctx_st *provctx;
+
     size_t keyl;                /* The configured length of the key */
 
     unsigned char *key;         /* A copy of the key */
@@ -85,6 +96,7 @@ struct vigenere_ctx_st {
     int enc;                    /* 0 = decrypt, 1 = encrypt */
     int ongoing;                /* 1 = operation has started */
 };
+#define ERR_HANDLE(ctx) ((ctx)->provctx->proverr_handle)
 
 static void *vigenere_newctx(void *vprovctx)
 {
@@ -92,7 +104,7 @@ static void *vigenere_newctx(void *vprovctx)
 
     if (ctx != NULL) {
         memset(ctx, 0, sizeof(*ctx));
-        ctx->prov = vprovctx;
+        ctx->provctx = vprovctx;
     }
     return ctx;
 }
@@ -115,11 +127,12 @@ static void *vigenere_dupctx(void *vctx)
     struct vigenere_ctx_st *src = vctx;
     struct vigenere_ctx_st *dst = NULL;
 
-    dst = vigenere_newctx(NULL);
-    if (dst == NULL)
-        return NULL;
+    if (src == NULL
+        || (dst = vigenere_newctx(NULL)) == NULL)
 
-    dst->prov = src->prov;
+    dst->provctx->proverr_handle =
+        proverr_dup_handle(src->provctx->proverr_handle);
+    dst->provctx = src->provctx;
     dst->keyl = src->keyl;
 
     if (src->key != NULL) {
@@ -141,6 +154,7 @@ static void vigenere_freectx(void *vctx)
 {
     struct vigenere_ctx_st *ctx = vctx;
 
+    ctx->provctx = NULL;
     vigenere_cleanctx(ctx);
     free(ctx);
 }
@@ -154,8 +168,7 @@ static int vigenere_encrypt_init(void *vctx,
     struct vigenere_ctx_st *ctx = vctx;
 
     if (keyl == (size_t)-1) {
-        vigenere_err(ctx->prov, VIGENERE_NO_KEYLEN_SET, NULL);
-        vigenere_err_set_debug(ctx->prov, __FILE__, __LINE__, __func__);
+        ERR_raise(ERR_HANDLE(ctx), VIGENERE_NO_KEYLEN_SET);
         return 0;
     }
     vigenere_cleanctx(ctx);
@@ -177,8 +190,7 @@ static int vigenere_decrypt_init(void *vctx,
     size_t i;
 
     if (keyl == (size_t)-1) {
-        vigenere_err(ctx->prov, VIGENERE_NO_KEYLEN_SET, NULL);
-        vigenere_err_set_debug(ctx->prov, __FILE__, __LINE__, __func__);
+        ERR_raise(ERR_HANDLE(ctx), VIGENERE_NO_KEYLEN_SET);
         return 0;
     }
     vigenere_cleanctx(ctx);
@@ -285,8 +297,7 @@ static int vigenere_set_ctx_params(void *vctx, const OSSL_PARAM params[])
     const OSSL_PARAM *p;
 
     if (ctx->ongoing) {
-        vigenere_err(ctx->prov, VIGENERE_ONGOING_OPERATION, NULL);
-        vigenere_err_set_debug(ctx->prov, __FILE__, __LINE__, __func__);
+        ERR_raise(ERR_HANDLE(ctx), VIGENERE_ONGOING_OPERATION);
         return 0;
     }
 
@@ -349,8 +360,15 @@ static const OSSL_ITEM *vigenere_get_reason_strings(void *provctx)
     return reason_strings;
 }
 
+/* The function that tears down this provider */
+static void vigenere_teardown(void *vprovctx)
+{
+    provider_ctx_free(vprovctx);
+}
+
 /* The base dispatch table */
 static const OSSL_DISPATCH provider_functions[] = {
+    { OSSL_FUNC_PROVIDER_TEARDOWN, (funcptr_t)vigenere_teardown },
     { OSSL_FUNC_PROVIDER_QUERY_OPERATION, (funcptr_t)vigenere_operation },
     { OSSL_FUNC_PROVIDER_GET_REASON_STRINGS,
       (funcptr_t)vigenere_get_reason_strings },
@@ -362,26 +380,8 @@ int OSSL_provider_init(const OSSL_CORE_HANDLE *core,
                        const OSSL_DISPATCH **out,
                        void **vprovctx)
 {
-    for (; in->function_id != 0; in++)
-        switch (in->function_id) {
-        case OSSL_FUNC_CORE_NEW_ERROR:
-            c_new_error = OSSL_FUNC_core_new_error(in);
-            break;
-        case OSSL_FUNC_CORE_SET_ERROR_DEBUG:
-            c_set_error_debug = OSSL_FUNC_core_set_error_debug(in);
-            break;
-        case OSSL_FUNC_CORE_VSET_ERROR:
-            c_vset_error = OSSL_FUNC_core_vset_error(in);
-            break;
-        }
-
+    if ((*vprovctx = provider_ctx_new(core, in)) == NULL)
+        return 0;
     *out = provider_functions;
-
-    /*
-     * This provider has no need of its own context, so it simply passes
-     * the core handle, which will get passed back to diverse functions
-     * and must be present for our error macro to work right.
-     */
-    *vprovctx = (void *)core;
     return 1;
 }

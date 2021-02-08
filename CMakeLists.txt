@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 project(vigenere-provider LANGUAGES C)
-set(CMAKE_C_STANDARD 90)
+set(CMAKE_C_STANDARD 99)
 
 include(CheckLibraryExists)
 include(CheckFunctionExists)
@@ -16,10 +16,12 @@ if (DEFINED MSVC_VERSION)
   set(OPENSSL_SSL_LIBRARY ${OPENSSL_ROOT_DIR}/lib/libssl.lib)
 endif()
 
+add_subdirectory(libprov)
+
 # Provider module
 add_library(vigenere MODULE vigenere.c)
 set_target_properties(vigenere PROPERTIES PREFIX "" OUTPUT_NAME "vigenere")
-target_link_libraries(vigenere ${OPENSSL_CRYPTO_LIBRARY})
+target_link_libraries(vigenere prov ${OPENSSL_CRYPTO_LIBRARY})
 
 # Testing
 add_library(test_common STATIC test_common.c)
