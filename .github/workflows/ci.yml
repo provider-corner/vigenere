@@ -1,0 +1,38 @@
+name: GitHub CI
+
+on: [pull_request, push]
+
+jobs:
+  build-and-test-vigenere:
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, macos-latest ]
+    runs-on: ${{matrix.os}}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - uses: actions/checkout@v2
+        with:
+          repository: openssl/openssl
+          path: openssl
+      - name: configure OpenSSL with compiler ${{matrix.compiler}}
+        run: |
+          mkdir ../openssl-install
+          ./Configure --prefix=$(cd ..; pwd)/openssl-install
+        working-directory: openssl
+      - name: build+install OpenSSL
+        run: make -s install_dev
+        working-directory: openssl
+      - name: configure Vigenere provider with compiler ${{matrix.compiler}}
+        run: cmake -DOPENSSL_ROOT_DIR="$(pwd)/openssl-install"
+                   -S . -B _build
+      - name: build Vigenere provider
+        run: cmake --build _build
+      - name: MacOS hack (OpenSSL expects .dylib rather than .so)
+        if: matrix.os == 'macos-latest'
+        run: ln -s vigenere.so vigenere.dylib
+        working-directory: _build
+      - name: test Vigenere provider
+        run: ctest -VV
+        working-directory: _build
