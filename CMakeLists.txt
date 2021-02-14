@@ -25,7 +25,7 @@ add_subdirectory(libprov)
 # Provider module
 add_library(vigenere MODULE vigenere.c)
 set_target_properties(vigenere PROPERTIES PREFIX "" OUTPUT_NAME "vigenere")
-target_link_libraries(vigenere prov ${OPENSSL_CRYPTO_LIBRARY})
+target_link_libraries(vigenere libprov ${OPENSSL_CRYPTO_LIBRARY})
 
 # Testing
 add_library(test_common STATIC test_common.c)
