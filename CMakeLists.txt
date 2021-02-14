@@ -12,7 +12,7 @@ include(CheckFunctionExists)
 enable_testing()
 
 find_package(OpenSSL 3.0 REQUIRED)
-include_directories(${OPENSSL_INCLUDE_DIR})
+
 if (DEFINED MSVC_VERSION)
   # FindOpenSSL.cmake assumes http://www.slproweb.com/products/Win32OpenSSL.html
   # and gets it quote wrong when an install from OpenSSL source is present
@@ -25,18 +25,24 @@ add_subdirectory(libprov)
 # Provider module
 add_library(vigenere MODULE vigenere.c)
 set_target_properties(vigenere PROPERTIES PREFIX "" OUTPUT_NAME "vigenere")
-target_link_libraries(vigenere libprov ${OPENSSL_CRYPTO_LIBRARY})
+target_include_directories(vigenere PRIVATE ${OPENSSL_INCLUDE_DIR})
+target_link_libraries(vigenere PRIVATE libprov ${OPENSSL_CRYPTO_LIBRARY})
 
 # Testing
 add_library(test_common STATIC test_common.c)
 add_executable(test_vigenere test_vigenere.c)
-target_link_libraries(test_vigenere test_common ${OPENSSL_CRYPTO_LIBRARY})
-add_executable(test_vigenere_err test_vigenere_err.c)
-target_link_libraries(test_vigenere_err test_common ${OPENSSL_CRYPTO_LIBRARY})
+target_include_directories(test_vigenere PRIVATE ${OPENSSL_INCLUDE_DIR})
+target_link_libraries(test_vigenere
+  PRIVATE test_common ${OPENSSL_CRYPTO_LIBRARY})
 add_test(NAME vigenere COMMAND test_vigenere)
 set_tests_properties(vigenere
   PROPERTIES ENVIRONMENT "OPENSSL_MODULES=${CMAKE_BINARY_DIR}"
   )
+
+add_executable(test_vigenere_err test_vigenere_err.c)
+target_include_directories(test_vigenere_err PRIVATE ${OPENSSL_INCLUDE_DIR})
+target_link_libraries(test_vigenere_err
+  PRIVATE test_common ${OPENSSL_CRYPTO_LIBRARY})
 add_test(NAME vigenere_err COMMAND test_vigenere_err)
 set_tests_properties(vigenere_err
   PROPERTIES ENVIRONMENT "OPENSSL_MODULES=${CMAKE_BINARY_DIR}"
