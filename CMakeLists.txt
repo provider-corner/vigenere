@@ -19,9 +19,13 @@ message("-- Found OpenSSL application: ${OPENSSL_PROGRAM}")
 
 if (DEFINED MSVC_VERSION)
   # FindOpenSSL.cmake assumes http://www.slproweb.com/products/Win32OpenSSL.html
-  # and gets it quote wrong when an install from OpenSSL source is present
-  set(OPENSSL_CRYPTO_LIBRARY ${OPENSSL_ROOT_DIR}/lib/libcrypto.lib)
-  set(OPENSSL_SSL_LIBRARY ${OPENSSL_ROOT_DIR}/lib/libssl.lib)
+  # and gets it quite wrong when an install from OpenSSL source is present
+  if (NOT EXISTS ${OPENSSL_CRYPTO_LIBRARY})
+    set(OPENSSL_CRYPTO_LIBRARY ${OPENSSL_ROOT_DIR}/lib/libcrypto.lib)
+  endif()
+  if (NOT EXISTS ${OPENSSL_SSL_LIBRARY})
+    set(OPENSSL_SSL_LIBRARY ${OPENSSL_ROOT_DIR}/lib/libssl.lib)
+  endif()
 endif()
 
 add_subdirectory(libprov)
