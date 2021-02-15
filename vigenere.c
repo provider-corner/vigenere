@@ -68,7 +68,10 @@ static struct provider_ctx_st *provider_ctx_new(const OSSL_CORE_HANDLE *core,
  * Forward declarations to ensure we get signatures right.  All the
  * OSSL_FUNC_* types come from <openssl/core_dispatch.h>
  */
-static OSSL_FUNC_provider_query_operation_fn vigenere_operation;
+static OSSL_FUNC_provider_query_operation_fn vigenere_prov_operation;
+static OSSL_FUNC_provider_get_params_fn vigenere_prov_get_params;
+static OSSL_FUNC_provider_get_reason_strings_fn vigenere_prov_get_reason_strings;
+
 static OSSL_FUNC_cipher_newctx_fn vigenere_newctx;
 static OSSL_FUNC_cipher_encrypt_init_fn vigenere_encrypt_init;
 static OSSL_FUNC_cipher_decrypt_init_fn vigenere_decrypt_init;
@@ -343,9 +346,9 @@ static const OSSL_ALGORITHM vigenere_ciphers[] = {
 };
 
 /* The function that returns the appropriate algorithm table per operation */
-static const OSSL_ALGORITHM *vigenere_operation(void *vprovctx,
-                                                int operation_id,
-                                                int *no_cache)
+static const OSSL_ALGORITHM *vigenere_prov_operation(void *vprovctx,
+                                                     int operation_id,
+                                                     int *no_cache)
 {
     *no_cache = 0;
     switch (operation_id) {
@@ -355,23 +358,39 @@ static const OSSL_ALGORITHM *vigenere_operation(void *vprovctx,
     return NULL;
 }
 
-static const OSSL_ITEM *vigenere_get_reason_strings(void *provctx)
+static const OSSL_ITEM *vigenere_prov_get_reason_strings(void *provctx)
 {
     return reason_strings;
 }
 
+static int vigenere_prov_get_params(void *provctx, OSSL_PARAM *params)
+{
+    OSSL_PARAM *p;
+
+    if ((p = OSSL_PARAM_locate(params, "version")) != NULL
+        && !OSSL_PARAM_set_utf8_ptr(p, VERSION))
+        return 0;
+    if ((p = OSSL_PARAM_locate(params, "buildinfo")) != NULL
+        && BUILDTYPE[0] != '\0'
+        && !OSSL_PARAM_set_utf8_ptr(p, BUILDTYPE))
+        return 0;
+    return 1;
+}
+
 /* The function that tears down this provider */
-static void vigenere_teardown(void *vprovctx)
+static void vigenere_prov_teardown(void *vprovctx)
 {
     provider_ctx_free(vprovctx);
 }
 
 /* The base dispatch table */
 static const OSSL_DISPATCH provider_functions[] = {
-    { OSSL_FUNC_PROVIDER_TEARDOWN, (funcptr_t)vigenere_teardown },
-    { OSSL_FUNC_PROVIDER_QUERY_OPERATION, (funcptr_t)vigenere_operation },
+    { OSSL_FUNC_PROVIDER_TEARDOWN, (funcptr_t)vigenere_prov_teardown },
+    { OSSL_FUNC_PROVIDER_QUERY_OPERATION, (funcptr_t)vigenere_prov_operation },
     { OSSL_FUNC_PROVIDER_GET_REASON_STRINGS,
-      (funcptr_t)vigenere_get_reason_strings },
+      (funcptr_t)vigenere_prov_get_reason_strings },
+    { OSSL_FUNC_PROVIDER_GET_PARAMS,
+      (funcptr_t)vigenere_prov_get_params },
     { 0, NULL }
 };
 

@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 project(
   vigenere-provider
-  VERSION 1.0
+  VERSION 1.1
   DESCRIPTION "A very small demonstration that shows the minimum required things for a cipher in an OpenSSL 3.0 module, including provider specific error reasons."
   LANGUAGES C)
 set(CMAKE_C_STANDARD 99)
@@ -33,6 +33,10 @@ add_subdirectory(libprov)
 # Provider module
 add_library(vigenere MODULE vigenere.c)
 set_target_properties(vigenere PROPERTIES PREFIX "" OUTPUT_NAME "vigenere")
+target_compile_definitions(vigenere PRIVATE
+  VERSION="${CMAKE_PROJECT_VERSION}"
+  BUILDTYPE="${CMAKE_BUILD_TYPE}"
+  )
 target_include_directories(vigenere PRIVATE ${OPENSSL_INCLUDE_DIR})
 target_link_libraries(vigenere PRIVATE libprov ${OPENSSL_CRYPTO_LIBRARY})
 
