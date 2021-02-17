@@ -19,9 +19,11 @@
 /* The error reasons used here */
 #define VIGENERE_NO_KEYLEN_SET          1
 #define VIGENERE_ONGOING_OPERATION      2
+#define VIGENERE_INCORRECT_KEYLEN       3
 static const OSSL_ITEM reason_strings[] = {
     { VIGENERE_NO_KEYLEN_SET, "no key length has been set" },
     { VIGENERE_ONGOING_OPERATION, "an operation is underway" },
+    { VIGENERE_INCORRECT_KEYLEN, "incorrect key length" },
     { 0, NULL }
 };
 
@@ -304,9 +306,22 @@ static int vigenere_set_ctx_params(void *vctx, const OSSL_PARAM params[])
         return 0;
     }
 
-    if ((p = OSSL_PARAM_locate_const(params, "keylen")) != NULL
-        && !OSSL_PARAM_get_size_t(p, &ctx->keyl))
-        return 0;
+    if ((p = OSSL_PARAM_locate_const(params, "keylen")) != NULL) {
+        size_t keyl = 0;
+
+        if (!OSSL_PARAM_get_size_t(p, &keyl))
+            return 0;
+        /*
+         * It's measured in bits, this cipher handles bytes, so the length
+         * in bits must be a multiple of 8.
+         */
+        if (keyl % 8 != 0) {
+            ERR_raise_data(ERR_HANDLE(ctx), VIGENERE_INCORRECT_KEYLEN,
+                           "The key length must be a multiple of 8");
+            return 0;
+        }
+        ctx->keyl = keyl / 8;
+    }
     return 1;
 }
 

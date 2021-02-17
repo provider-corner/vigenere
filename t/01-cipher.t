@@ -17,7 +17,8 @@ sub cipher_test {
 
     plan (4);
 
-    my $keylength = length($opts{-key}) / 2;
+    my $keylength = length($opts{-key} // 0) / 2 * 8;
+    my $keylength_arg = $keylength ? " -keylength $keylength" : "";
 
     my $cleartextfile = "$testname-count.txt";
     open my $fclear, '>', $cleartextfile;
@@ -25,7 +26,7 @@ sub cipher_test {
     close $fclear;
 
     my $enccmd =
-        "openssl enc -provider vigenere -e -vigenere -keylength $keylength -K $opts{-key} -in $cleartextfile";
+        "openssl enc -provider vigenere -e -vigenere$keylength_arg -K $opts{-key} -in $cleartextfile";
     my $enctext = `$enccmd`;
     is($?, 0,                                     "encrypting with '$enccmd'");
     is(unpack('H*',$enctext), $opts{-ciphertext}, "encryption result");
