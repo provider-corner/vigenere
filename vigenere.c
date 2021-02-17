@@ -94,6 +94,7 @@ static OSSL_FUNC_cipher_gettable_ctx_params_fn vigenere_gettable_ctx_params;
 struct vigenere_ctx_st {
     struct provider_ctx_st *provctx;
 
+#define DEFAULT_KEYLENGTH 128   /* amount of bits */
     size_t keyl;                /* The configured length of the key */
 
     unsigned char *key;         /* A copy of the key */
@@ -110,6 +111,7 @@ static void *vigenere_newctx(void *vprovctx)
     if (ctx != NULL) {
         memset(ctx, 0, sizeof(*ctx));
         ctx->provctx = vprovctx;
+        ctx->keyl = DEFAULT_KEYLENGTH;
     }
     return ctx;
 }
