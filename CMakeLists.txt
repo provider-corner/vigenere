@@ -50,15 +50,15 @@ set(TEST_ENVIRONMENT
   )
 
 add_library(test_common STATIC test_common.c)
+target_include_directories(test_common PUBLIC ${OPENSSL_INCLUDE_DIR})
+
 add_executable(test_vigenere test_vigenere.c)
-target_include_directories(test_vigenere PRIVATE ${OPENSSL_INCLUDE_DIR})
 target_link_libraries(test_vigenere
   PRIVATE test_common ${OPENSSL_CRYPTO_LIBRARY})
 add_test(NAME vigenere COMMAND test_vigenere)
 set_tests_properties(vigenere PROPERTIES ENVIRONMENT "${TEST_ENVIRONMENT}")
 
 add_executable(test_vigenere_err test_vigenere_err.c)
-target_include_directories(test_vigenere_err PRIVATE ${OPENSSL_INCLUDE_DIR})
 target_link_libraries(test_vigenere_err
   PRIVATE test_common ${OPENSSL_CRYPTO_LIBRARY})
 add_test(NAME vigenere_err COMMAND test_vigenere_err)
