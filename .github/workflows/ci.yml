@@ -9,10 +9,16 @@ jobs:
         os: [ ubuntu-latest, macos-latest ]
     runs-on: ${{matrix.os}}
     steps:
-      - uses: actions/checkout@v2
+      - name: install cpanm and Test2::V0
+        uses: perl-actions/install-with-cpanm@v1
+        with:
+          install: Test2::V0
+      - name: checkout vigenere
+        uses: actions/checkout@v2
         with:
           submodules: true
-      - uses: actions/checkout@v2
+      - name: checkout OpenSSL
+        uses: actions/checkout@v2
         with:
           repository: openssl/openssl
           path: openssl
