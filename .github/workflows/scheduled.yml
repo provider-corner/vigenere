@@ -1,0 +1,54 @@
+name: GitHub scheduled
+
+on:
+  schedule:
+    # Run this experiment every 4th hour
+    # * is a special character in YAML so you have to quote this string
+    - cron:  '* */8 * * *'
+
+# This is the exact same as in ci.yml
+jobs:
+  build-and-test-vigenere:
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, macos-latest ]
+    runs-on: ${{matrix.os}}
+    steps:
+      - name: install cpanm and Test2::V0
+        uses: perl-actions/install-with-cpanm@v1
+        with:
+          install: Test2::V0
+      - name: checkout vigenere
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: checkout OpenSSL
+        uses: actions/checkout@v2
+        with:
+          repository: openssl/openssl
+          path: openssl
+      - name: "[TEMPORARY] patch OpenSSL to allow use of vigenere"
+        run: |
+          patch -p1 < ../.github/openssl-patches/0001-Allow-openssl-enc-and-openssl-dgst-to-use-unknown-ci.patch
+          patch -p1 < ../.github/openssl-patches/0002-fixup-Allow-openssl-enc-and-openssl-dgst-to-use-unkn.patch
+        working-directory: openssl
+      - name: configure OpenSSL with compiler ${{matrix.compiler}}
+        run: |
+          mkdir ../openssl-install
+          ./Configure --prefix=$(cd ..; pwd)/openssl-install
+        working-directory: openssl
+      - name: build+install OpenSSL
+        run: make -s install_sw
+        working-directory: openssl
+      - name: configure Vigenere provider with compiler ${{matrix.compiler}}
+        run: cmake -DOPENSSL_ROOT_DIR="$(pwd)/openssl-install"
+                   -S . -B _build
+      - name: build Vigenere provider
+        run: cmake --build _build
+      - name: MacOS hack (OpenSSL expects .dylib rather than .so)
+        if: matrix.os == 'macos-latest'
+        run: ln -s vigenere.so vigenere.dylib
+        working-directory: _build
+      - name: test Vigenere provider
+        run: ctest -VV
+        working-directory: _build
