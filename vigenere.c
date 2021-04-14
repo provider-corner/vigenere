@@ -170,7 +170,8 @@ static int vigenere_encrypt_init(void *vctx,
                                  const unsigned char *key,
                                  size_t keyl,
                                  const unsigned char *iv_unused,
-                                 size_t ivl_unused)
+                                 size_t ivl_unused,
+                                 const OSSL_PARAM params[])
 {
     struct vigenere_ctx_st *ctx = vctx;
 
@@ -191,7 +192,8 @@ static int vigenere_decrypt_init(void *vctx,
                                  const unsigned char *key,
                                  size_t keyl,
                                  const unsigned char *iv_unused,
-                                 size_t ivl_unused)
+                                 size_t ivl_unused,
+                                 const OSSL_PARAM params[])
 {
     struct vigenere_ctx_st *ctx = vctx;
     size_t i;
