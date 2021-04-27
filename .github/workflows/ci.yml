@@ -22,10 +22,6 @@ jobs:
         with:
           repository: openssl/openssl
           path: openssl
-      - name: "[TEMPORARY] patch OpenSSL to allow use of vigenere"
-        run: |
-          patch -p1 < ../.github/openssl-patches/0001-Allow-openssl-enc-and-openssl-dgst-to-use-unknown-ci.patch
-        working-directory: openssl
       - name: configure OpenSSL with compiler ${{matrix.compiler}}
         run: |
           mkdir ../openssl-install
