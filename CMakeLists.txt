@@ -13,6 +13,9 @@ enable_testing()
 
 find_package(OpenSSL 3.0 REQUIRED)
 
+if (NOT DEFINED OPENSSL_ROOT_DIR)
+  get_filename_component(OPENSSL_ROOT_DIR ${OPENSSL_INCLUDE_DIR} DIRECTORY)
+endif()
 find_program(OPENSSL_PROGRAM openssl
   PATHS ${OPENSSL_ROOT_DIR} PATH_SUFFIXES apps bin NO_DEFAULT_PATH)
 message("-- Found OpenSSL application: ${OPENSSL_PROGRAM}")
