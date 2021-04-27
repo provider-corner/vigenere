@@ -35,10 +35,6 @@ jobs:
                    -S . -B _build
       - name: build Vigenere provider
         run: cmake --build _build
-      - name: MacOS hack (OpenSSL expects .dylib rather than .so)
-        if: matrix.os == 'macos-latest'
-        run: ln -s vigenere.so vigenere.dylib
-        working-directory: _build
       - name: test Vigenere provider
         run: ctest -VV
         working-directory: _build

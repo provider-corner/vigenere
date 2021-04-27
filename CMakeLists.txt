@@ -35,7 +35,8 @@ add_subdirectory(libprov)
 
 # Provider module
 add_library(vigenere MODULE vigenere.c)
-set_target_properties(vigenere PROPERTIES PREFIX "" OUTPUT_NAME "vigenere")
+set_target_properties(vigenere PROPERTIES
+  PREFIX "" OUTPUT_NAME "vigenere" SUFFIX ${CMAKE_SHARED_LIBRARY_SUFFIX})
 target_compile_definitions(vigenere PRIVATE
   VERSION="${CMAKE_PROJECT_VERSION}"
   BUILDTYPE="${CMAKE_BUILD_TYPE}"
