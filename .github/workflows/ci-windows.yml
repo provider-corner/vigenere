@@ -1,0 +1,52 @@
+name: Windows GitHub CI
+
+on: [pull_request, push]
+
+jobs:
+  build-and-test-vigenere:
+    strategy:
+      matrix:
+        platform:
+          - arch: win64
+            target: VC-WIN64A
+          - arch: win32
+            target: VC-WIN32
+    runs-on: windows-latest
+    steps:
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.platform.arch }}
+      - uses: ilammy/setup-nasm@v1
+        with:
+          platform: ${{ matrix.platform.arch }}
+      - name: install cpanm and Test2::V0
+        uses: perl-actions/install-with-cpanm@v1
+        with:
+          install: Test2::V0
+      - name: checkout vigenere
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: checkout OpenSSL
+        uses: actions/checkout@v2
+        with:
+          repository: openssl/openssl
+          path: openssl
+      - name: configure OpenSSL for ${{matrix.platform.target}}
+        run: |
+          $cwd = Get-Location
+          mkdir ..\openssl-install
+          perl Configure ${{matrix.platform.target}} --prefix="$cwd\..\openssl-install"
+        working-directory: openssl
+      - name: build+install OpenSSL
+        run: nmake /S install_sw
+        working-directory: openssl
+      - name: configure Vigenere provider
+        run: |
+          $cwd = Get-Location
+          cmake -DOPENSSL_ROOT_DIR="$cwd\openssl-install" -S . -B _build
+      - name: build Vigenere provider
+        run: cmake --build _build
+      - name: test Vigenere provider
+        run: ctest -VV
+        working-directory: _build

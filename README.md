@@ -1,4 +1,5 @@
 [![github actions ci badge]][github actions ci]
+[![github actions windows ci badge]][github actions windows ci]
 
 ![CC0](http://i.creativecommons.org/p/zero/1.0/88x15.png)
 
@@ -27,5 +28,13 @@ If you want to use this for real, go back to the 16th century :wink:
 
 [github actions ci]:
     <https://github.com/provider-corner/vigenere/actions?query=workflow%3A%22GitHub+CI%22>
+    "GitHub Actions CI"
+
+[github actions windows ci badge]:
+    <https://github.com/provider-corner/vigenere/workflows/Windows%20GitHub%20CI/badge.svg>
+    "GitHub Actions CI Status"
+
+[github actions windows ci]:
+    <https://github.com/provider-corner/vigenere/actions?query=workflow%3A%22Windows+GitHub+CI%22>
     "GitHub Actions CI"
 
