@@ -48,5 +48,5 @@ jobs:
       - name: build Vigenere provider
         run: cmake --build _build
       - name: test Vigenere provider
-        run: ctest -VV
+        run: ctest -VV -C Debug
         working-directory: _build
