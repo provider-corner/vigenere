@@ -39,7 +39,7 @@ int main()
   T(EVP_CipherInit(ctx, c, NULL, NULL, 1));
   printf(cBLUE "Testing setting incorrect key length (5)" cNORM "\n");
   T(EVP_CIPHER_CTX_set_key_length(ctx, 5) <= 0);
-  printf(cBLUE "Testing setting key length to %lu (measured in bits)" cNORM "\n",
+  printf(cBLUE "Testing setting key length to %zu (measured in bits)" cNORM "\n",
          sizeof(key) * 8);
   T(EVP_CIPHER_CTX_set_key_length(ctx, sizeof(key) * 8) > 0);
   printf(cBLUE "Testing encryption" cNORM "\n");
@@ -52,9 +52,9 @@ int main()
   T(EVP_CipherUpdate(ctx, plaintext2, &outl2, ciphertext, outl));
   T(EVP_CipherFinal(ctx, plaintext2 + outl2, &outl2f));
 
-  printf("Plaintext[%lu]  = ", sizeof(plaintext));
+  printf("Plaintext[%zu]  = ", sizeof(plaintext));
   hexdump(plaintext, sizeof(plaintext));
-  printf("Key[%lu]        = ", sizeof(key));
+  printf("Key[%zu]        = ", sizeof(key));
   hexdump(key, sizeof(key));
   printf("Ciphertext[%d] = ", outl + outlf);
   hexdump(ciphertext, outl + outlf);
