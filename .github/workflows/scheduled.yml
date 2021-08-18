@@ -36,7 +36,7 @@ jobs:
         run: make -s install_sw
         working-directory: openssl
       - name: configure Vigenere provider with compiler ${{matrix.compiler}}
-        run: cmake -DOPENSSL_ROOT_DIR="$(pwd)/openssl-install"
+        run: cmake -DCMAKE_PREFIX_PATH="$(pwd)/openssl-install"
                    -S . -B _build
       - name: build Vigenere provider
         run: cmake --build _build

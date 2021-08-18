@@ -44,7 +44,7 @@ jobs:
       - name: configure Vigenere provider
         run: |
           $cwd = Get-Location
-          cmake -DOPENSSL_ROOT_DIR="$cwd\openssl-install" -S . -B _build
+          cmake -DCMAKE_PREFIX_PATH="$cwd\openssl-install" -S . -B _build
       - name: build Vigenere provider
         run: cmake --build _build
       - name: test Vigenere provider
