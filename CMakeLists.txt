@@ -23,11 +23,13 @@ message("-- Found OpenSSL application: ${OPENSSL_PROGRAM}")
 if (DEFINED MSVC_VERSION)
   # FindOpenSSL.cmake assumes http://www.slproweb.com/products/Win32OpenSSL.html
   # and gets it quite wrong when an install from OpenSSL source is present
-  if (NOT EXISTS ${OPENSSL_CRYPTO_LIBRARY})
-    set(OPENSSL_CRYPTO_LIBRARY ${OPENSSL_ROOT_DIR}/lib/libcrypto.lib)
+  if (NOT EXISTS ${OPENSSL_CRYPTO_LIBRARIES})
+    set(OPENSSL_CRYPTO_LIBRARIES
+      ${OPENSSL_ROOT_DIR}/lib/libcrypto.lib)
   endif()
-  if (NOT EXISTS ${OPENSSL_SSL_LIBRARY})
-    set(OPENSSL_SSL_LIBRARY ${OPENSSL_ROOT_DIR}/lib/libssl.lib)
+  if (NOT EXISTS ${OPENSSL_SSL_LIBRARIES})
+    set(OPENSSL_SSL_LIBRARIES
+      ${OPENSSL_ROOT_DIR}/lib/libssl.lib ${OPENSSL_CRYPTO_LIBRARIES})
   endif()
 endif()
 
@@ -42,7 +44,7 @@ target_compile_definitions(vigenere PRIVATE
   BUILDTYPE="${CMAKE_BUILD_TYPE}"
   )
 target_include_directories(vigenere PRIVATE ${OPENSSL_INCLUDE_DIR})
-target_link_libraries(vigenere PRIVATE libprov ${OPENSSL_CRYPTO_LIBRARY})
+target_link_libraries(vigenere PRIVATE libprov ${OPENSSL_CRYPTO_LIBRARIES})
 
 # Testing
 set(TEST_ENVIRONMENT
@@ -58,13 +60,13 @@ target_include_directories(test_common PUBLIC ${OPENSSL_INCLUDE_DIR})
 
 add_executable(test_vigenere test_vigenere.c)
 target_link_libraries(test_vigenere
-  PRIVATE test_common ${OPENSSL_CRYPTO_LIBRARY})
+  PRIVATE test_common ${OPENSSL_CRYPTO_LIBRARIES})
 add_test(NAME vigenere COMMAND test_vigenere)
 set_tests_properties(vigenere PROPERTIES ENVIRONMENT "${TEST_ENVIRONMENT}")
 
 add_executable(test_vigenere_err test_vigenere_err.c)
 target_link_libraries(test_vigenere_err
-  PRIVATE test_common ${OPENSSL_CRYPTO_LIBRARY})
+  PRIVATE test_common ${OPENSSL_CRYPTO_LIBRARIES})
 add_test(NAME vigenere_err COMMAND test_vigenere_err)
 set_tests_properties(vigenere_err PROPERTIES ENVIRONMENT "${TEST_ENVIRONMENT}")
 
