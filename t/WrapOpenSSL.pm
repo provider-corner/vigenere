@@ -55,7 +55,8 @@ sub load {
 
     if ($openssl_bindir) {
         # Binary path, works the same everywhere
-        $ENV{PATH} = join(':', $openssl_bindir, $ENV{PATH});
+        my $pathsep = ($^O eq 'MSWin32' ? ';' : ':');
+        $ENV{PATH} = join($pathsep, $openssl_bindir, $ENV{PATH});
         if ($verbose) {
             print STDERR "Added $openssl_bindir to:\n";
             print STDERR "  PATH\n";
