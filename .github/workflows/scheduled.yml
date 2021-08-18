@@ -30,7 +30,7 @@ jobs:
       - name: configure OpenSSL with compiler ${{matrix.compiler}}
         run: |
           mkdir ../openssl-install
-          ./Configure --prefix=$(cd ..; pwd)/openssl-install
+          ./Configure --prefix=$(cd ..; pwd)/openssl-install --libdir=lib
         working-directory: openssl
       - name: build+install OpenSSL
         run: make -s install_sw
