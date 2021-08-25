@@ -94,7 +94,7 @@ static OSSL_FUNC_cipher_gettable_ctx_params_fn vigenere_gettable_ctx_params;
 struct vigenere_ctx_st {
     struct provider_ctx_st *provctx;
 
-#define DEFAULT_KEYLENGTH 128   /* amount of bits */
+#define DEFAULT_KEYLENGTH 16    /* amount of bytes == 128 bits */
     size_t keyl;                /* The configured length of the key */
 
     unsigned char *key;         /* A copy of the key */
@@ -315,16 +315,7 @@ static int vigenere_set_ctx_params(void *vctx, const OSSL_PARAM params[])
 
         if (!OSSL_PARAM_get_size_t(p, &keyl))
             return 0;
-        /*
-         * It's measured in bits, this cipher handles bytes, so the length
-         * in bits must be a multiple of 8.
-         */
-        if (keyl % 8 != 0) {
-            ERR_raise_data(ERR_HANDLE(ctx), VIGENERE_INCORRECT_KEYLEN,
-                           "The key length must be a multiple of 8");
-            return 0;
-        }
-        ctx->keyl = keyl / 8;
+        ctx->keyl = keyl;
     }
     return 1;
 }
