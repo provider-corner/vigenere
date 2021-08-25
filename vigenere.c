@@ -251,6 +251,7 @@ static const OSSL_PARAM *vigenere_gettable_params(void *provctx)
 {
     static const OSSL_PARAM table[] = {
         OSSL_PARAM_size_t("blocksize", NULL),
+        OSSL_PARAM_size_t("keylen", NULL),
         OSSL_PARAM_END
     };
 
@@ -264,6 +265,20 @@ static int vigenere_get_params(OSSL_PARAM params[])
     if ((p = OSSL_PARAM_locate(params, "blocksize")) != NULL)
         if (!OSSL_PARAM_set_size_t(p, 1))
             return 0;
+    if ((p = OSSL_PARAM_locate(params, "keylen")) != NULL) {
+        size_t keyl = DEFAULT_KEYLENGTH;
+        /*
+         * Give the user a chance to decide, note that the length is
+         * expressed in bits
+         */
+        const char *user_keyl = getenv("VIGENERE_KEYLEN");
+
+        if (user_keyl != NULL)
+            keyl = strtoul(user_keyl, NULL, 0);
+
+        if (!OSSL_PARAM_set_size_t(p, keyl))
+            return 0;
+    }
     return 1;
 }
 
