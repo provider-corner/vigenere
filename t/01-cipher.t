@@ -9,7 +9,7 @@ my $count;
 
 subtest('plain vigenere', \&cipher_test,
         -cleartext => "The quick brown fox jumps over the lazy dog\n",
-        -ciphertext => '54686520717569636b2062726f776e20666f78206a756d7073206f76657220746865206c617a7920646f670a',
+        -ciphertext => '558baa87fa2036526c43a7d9f8223b0f6792bd87f3203a5f7443b4ddee1ded63698865d3ea25460f6592ac71',
         -key => '0123456789ABCDEF' x 2);
 # If OpenSSL would allow a -keylength option, we could set the key to
 # -key => '0123456789ABCDEF' x 4
