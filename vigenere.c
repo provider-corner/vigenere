@@ -175,14 +175,16 @@ static int vigenere_encrypt_init(void *vctx,
 {
     struct vigenere_ctx_st *ctx = vctx;
 
-    if (keyl == (size_t)-1) {
-        ERR_raise(ERR_HANDLE(ctx), VIGENERE_NO_KEYLEN_SET);
-        return 0;
+    if (key != NULL) {
+        if (keyl == (size_t)-1) {
+            ERR_raise(ERR_HANDLE(ctx), VIGENERE_NO_KEYLEN_SET);
+            return 0;
+        }
+        free(ctx->key);
+        ctx->key = malloc(keyl);
+        memcpy(ctx->key, key, keyl);
+        ctx->keyl = keyl;
     }
-    vigenere_cleanctx(ctx);
-    ctx->key = malloc(keyl);
-    memcpy(ctx->key, key, keyl);
-    ctx->keyl = keyl;
     ctx->keypos = 0;
     ctx->ongoing = 0;
     return 1;
@@ -198,15 +200,17 @@ static int vigenere_decrypt_init(void *vctx,
     struct vigenere_ctx_st *ctx = vctx;
     size_t i;
 
-    if (keyl == (size_t)-1) {
-        ERR_raise(ERR_HANDLE(ctx), VIGENERE_NO_KEYLEN_SET);
-        return 0;
+    if (key != NULL) {
+        if (keyl == (size_t)-1) {
+            ERR_raise(ERR_HANDLE(ctx), VIGENERE_NO_KEYLEN_SET);
+            return 0;
+        }
+        free(ctx->key);
+        ctx->key = malloc(keyl);
+        for (i = 0; i < keyl; i++)
+            ctx->key[i] = 256 - key[i];
+        ctx->keyl = keyl;
     }
-    vigenere_cleanctx(ctx);
-    ctx->key = malloc(keyl);
-    for (i = 0; i < keyl; i++)
-        ctx->key[i] = 256 - key[i];
-    ctx->keyl = keyl;
     ctx->keypos = 0;
     ctx->ongoing = 0;
     return 1;
