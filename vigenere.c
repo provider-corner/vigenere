@@ -6,9 +6,9 @@
 
 #include <openssl/core.h>
 #include <openssl/core_dispatch.h>
-#include <openssl/params.h>
 
 #include "prov/err.h"
+#include "prov/num.h"
 
 /*********************************************************************
  *
@@ -254,9 +254,9 @@ static int vigenere_final(void *vctx,
 static const OSSL_PARAM *vigenere_gettable_params(void *provctx)
 {
     static const OSSL_PARAM table[] = {
-        OSSL_PARAM_size_t("blocksize", NULL),
-        OSSL_PARAM_size_t("keylen", NULL),
-        OSSL_PARAM_END
+        { "blocksize", OSSL_PARAM_UNSIGNED_INTEGER, NULL, sizeof(size_t), 0 },
+        { "keylen", OSSL_PARAM_UNSIGNED_INTEGER, NULL, sizeof(size_t), 0 },
+        { NULL, 0, NULL, 0, 0 },
     };
 
     return table;
@@ -266,22 +266,24 @@ static int vigenere_get_params(OSSL_PARAM params[])
 {
     OSSL_PARAM *p;
 
-    if ((p = OSSL_PARAM_locate(params, "blocksize")) != NULL)
-        if (!OSSL_PARAM_set_size_t(p, 1))
-            return 0;
-    if ((p = OSSL_PARAM_locate(params, "keylen")) != NULL) {
-        size_t keyl = DEFAULT_KEYLENGTH;
-        /*
-         * Give the user a chance to decide, note that the length is
-         * expressed in bits
-         */
-        const char *user_keyl = getenv("VIGENERE_KEYLEN");
+    for (p = params; p->key != NULL; p++) {
+        if (strcasecmp(p->key, "blocksize") == 0)
+            if (provnum_set_size_t(p, 1) < 0)
+                return 0;
+        if (strcasecmp(p->key, "keylen") == 0) {
+            size_t keyl = DEFAULT_KEYLENGTH;
+            /*
+             * Give the user a chance to decide, note that the length is
+             * expressed in bits
+             */
+            const char *user_keyl = getenv("VIGENERE_KEYLEN");
 
-        if (user_keyl != NULL)
-            keyl = strtoul(user_keyl, NULL, 0);
+            if (user_keyl != NULL)
+                keyl = strtoul(user_keyl, NULL, 0);
 
-        if (!OSSL_PARAM_set_size_t(p, keyl))
-            return 0;
+            if (provnum_set_size_t(p, keyl) < 0)
+                return 0;
+        }
     }
     return 1;
 }
@@ -289,8 +291,8 @@ static int vigenere_get_params(OSSL_PARAM params[])
 static const OSSL_PARAM *vigenere_gettable_ctx_params(void *cctx, void *provctx)
 {
     static const OSSL_PARAM table[] = {
-        OSSL_PARAM_size_t("keylen", NULL),
-        OSSL_PARAM_END
+        { "keylen", OSSL_PARAM_UNSIGNED_INTEGER, NULL, sizeof(size_t), 0 },
+        { NULL, 0, NULL, 0, 0 },
     };
 
     return table;
@@ -299,12 +301,15 @@ static const OSSL_PARAM *vigenere_gettable_ctx_params(void *cctx, void *provctx)
 static int vigenere_get_ctx_params(void *vctx, OSSL_PARAM params[])
 {
     struct vigenere_ctx_st *ctx = vctx;
-    OSSL_PARAM *p;
 
-    if (ctx->keyl > 0
-        && (p = OSSL_PARAM_locate(params, "keylen")) != NULL
-        && !OSSL_PARAM_set_size_t(p, ctx->keyl))
-        return 0;
+    if (ctx->keyl > 0) {
+        OSSL_PARAM *p;
+
+        for (p = params; p->key != NULL; p++)
+            if (strcasecmp(p->key, "keylen") == 0
+                && provnum_set_size_t(p, ctx->keyl) < 0)
+                return 0;
+    }
     return 1;
 }
 
@@ -312,8 +317,8 @@ static int vigenere_get_ctx_params(void *vctx, OSSL_PARAM params[])
 static const OSSL_PARAM *vigenere_settable_ctx_params(void *cctx, void *provctx)
 {
     static const OSSL_PARAM table[] = {
-        OSSL_PARAM_size_t("keylen", NULL),
-        OSSL_PARAM_END
+        { "keylen", OSSL_PARAM_UNSIGNED_INTEGER, NULL, sizeof(size_t), 0 },
+        { NULL, 0, NULL, 0, 0 },
     };
 
     return table;
@@ -329,13 +334,14 @@ static int vigenere_set_ctx_params(void *vctx, const OSSL_PARAM params[])
         return 0;
     }
 
-    if ((p = OSSL_PARAM_locate_const(params, "keylen")) != NULL) {
-        size_t keyl = 0;
+    for (p = params; p->key != NULL; p++)
+        if (strcasecmp(p->key, "keylen") == 0) {
+            size_t keyl = 0;
 
-        if (!OSSL_PARAM_get_size_t(p, &keyl))
-            return 0;
-        ctx->keyl = keyl;
-    }
+            if (provnum_get_size_t(&keyl, p) < 0)
+                return 0;
+            ctx->keyl = keyl;
+        }
     return 1;
 }
 

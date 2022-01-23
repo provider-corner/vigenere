@@ -44,7 +44,7 @@ target_compile_definitions(vigenere PRIVATE
   BUILDTYPE="${CMAKE_BUILD_TYPE}"
   )
 target_include_directories(vigenere PRIVATE ${OPENSSL_INCLUDE_DIR})
-target_link_libraries(vigenere PRIVATE libprov ${OPENSSL_CRYPTO_LIBRARIES})
+target_link_libraries(vigenere PRIVATE libprov)
 
 # Testing
 set(TEST_ENVIRONMENT
