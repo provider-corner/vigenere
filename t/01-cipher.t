@@ -2,28 +2,34 @@ use strict;
 use warnings;
 use Test2::V0;
 
-plan(1);
+plan(2);
 
 my $testname = "01-cipher";
 my $count;
 
-subtest('plain vigenere', \&cipher_test,
+subtest('plain vigenere, 128 bit key', \&cipher_test,
         -cleartext => "The quick brown fox jumps over the lazy dog\n",
         -ciphertext => '558baa87fa2036526c43a7d9f8223b0f6792bd87f3203a5f7443b4ddee1ded63698865d3ea25460f6592ac71',
         -key => '0123456789ABCDEF' x 2);
-# If OpenSSL would allow a -keylength option, we could set the key to
-# -key => '0123456789ABCDEF' x 4
+
+subtest('plain vigenere, 256 bit key', \&cipher_test,
+        -cleartext => "The quick brown fox jumps over the lazy dog\n",
+        -ciphertext => '52441fb8e7c99b736c43a7d9f8223b0f644b32b8e0c99f807443b4ddee1ded636641da04d7ceab306592ac71',
+        -key => 'FEDCBA98765432100123456789ABCDEF' x 2);
 
 sub cipher_test {
     my %opts = @_;
 
     plan (4);
 
-    my $keylength = length($opts{-key} // 0) / 2 * 8;
-    # Currently, OpenSSL doesn't support a key length argument,
-    # so we zero it here to avoid adding that argument.
-    $keylength = 0;
-    my $keylength_arg = $keylength ? " -keylength $keylength" : "";
+    my $keylength = length($opts{-key} // 0) / 2;
+    my $keylength_arg = "";
+    if ($keylength != 16) {
+        # Currently, OpenSSL doesn't support a key length argument.
+        # $keylength_arg = " -keylength $keylength";
+        # We have an environment variable in our back sleve, though.
+        $ENV{VIGENERE_KEYLEN} = $keylength;
+    }
 
     my $cleartextfile = "$testname-count.txt";
     open my $fclear, '>', $cleartextfile;
@@ -46,4 +52,7 @@ sub cipher_test {
     my $dectext = `$deccmd`;
     is($?, 0,                                     "decrypting with '$enccmd'");
     is($dectext, $opts{-cleartext}, "decryption result");
+
+    # Clean up
+    delete $ENV{VIGENERE_KEYLEN};
 }

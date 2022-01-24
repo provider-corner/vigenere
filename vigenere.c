@@ -274,7 +274,7 @@ static int vigenere_get_params(OSSL_PARAM params[])
             size_t keyl = DEFAULT_KEYLENGTH;
             /*
              * Give the user a chance to decide, note that the length is
-             * expressed in bits
+             * expressed in bytes
              */
             const char *user_keyl = getenv("VIGENERE_KEYLEN");
 
