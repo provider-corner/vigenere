@@ -265,11 +265,14 @@ static const OSSL_PARAM *vigenere_gettable_params(void *provctx)
 static int vigenere_get_params(OSSL_PARAM params[])
 {
     OSSL_PARAM *p;
+    int ok = 1;
 
     for (p = params; p->key != NULL; p++) {
         if (strcasecmp(p->key, "blocksize") == 0)
-            if (provnum_set_size_t(p, 1) < 0)
-                return 0;
+            if (provnum_set_size_t(p, 1) < 0) {
+                ok = 0;
+                continue;
+            }
         if (strcasecmp(p->key, "keylen") == 0) {
             size_t keyl = DEFAULT_KEYLENGTH;
             /*
@@ -281,11 +284,13 @@ static int vigenere_get_params(OSSL_PARAM params[])
             if (user_keyl != NULL)
                 keyl = strtoul(user_keyl, NULL, 0);
 
-            if (provnum_set_size_t(p, keyl) < 0)
-                return 0;
+            if (provnum_set_size_t(p, keyl) < 0) {
+                ok = 0;
+                continue;
+            }
         }
     }
-    return 1;
+    return ok;
 }
 
 static const OSSL_PARAM *vigenere_gettable_ctx_params(void *cctx, void *provctx)
@@ -301,16 +306,19 @@ static const OSSL_PARAM *vigenere_gettable_ctx_params(void *cctx, void *provctx)
 static int vigenere_get_ctx_params(void *vctx, OSSL_PARAM params[])
 {
     struct vigenere_ctx_st *ctx = vctx;
+    int ok = 1;
 
     if (ctx->keyl > 0) {
         OSSL_PARAM *p;
 
         for (p = params; p->key != NULL; p++)
             if (strcasecmp(p->key, "keylen") == 0
-                && provnum_set_size_t(p, ctx->keyl) < 0)
-                return 0;
+                && provnum_set_size_t(p, ctx->keyl) < 0) {
+                ok = 0;
+                continue;
+            }
     }
-    return 1;
+    return ok;
 }
 
 /* Parameters that libcrypto can send to this implementation */
@@ -328,6 +336,7 @@ static int vigenere_set_ctx_params(void *vctx, const OSSL_PARAM params[])
 {
     struct vigenere_ctx_st *ctx = vctx;
     const OSSL_PARAM *p;
+    int ok = 1;
 
     if (ctx->ongoing) {
         ERR_raise(ERR_HANDLE(ctx), VIGENERE_ONGOING_OPERATION);
@@ -338,11 +347,13 @@ static int vigenere_set_ctx_params(void *vctx, const OSSL_PARAM params[])
         if (strcasecmp(p->key, "keylen") == 0) {
             size_t keyl = 0;
 
-            if (provnum_get_size_t(&keyl, p) < 0)
-                return 0;
+            if (provnum_get_size_t(&keyl, p) < 0) {
+                ok = 0;
+                continue;
+            }
             ctx->keyl = keyl;
         }
-    return 1;
+    return ok;
 }
 
 
@@ -401,15 +412,18 @@ static const OSSL_ITEM *vigenere_prov_get_reason_strings(void *provctx)
 static int vigenere_prov_get_params(void *provctx, OSSL_PARAM *params)
 {
     OSSL_PARAM *p;
+    int ok = 1;
 
-    if ((p = OSSL_PARAM_locate(params, "version")) != NULL
-        && !OSSL_PARAM_set_utf8_ptr(p, VERSION))
-        return 0;
-    if ((p = OSSL_PARAM_locate(params, "buildinfo")) != NULL
-        && BUILDTYPE[0] != '\0'
-        && !OSSL_PARAM_set_utf8_ptr(p, BUILDTYPE))
-        return 0;
-    return 1;
+    for(p = params; p->key != NULL; p++)
+        if (strcasecmp(p->key, "version") == 0) {
+            *(const void **)p->data = VERSION;
+            p->return_size = strlen(VERSION);
+        } else if (strcasecmp(p->key, "buildinfo") == 0
+                 && BUILDTYPE[0] != '\0') {
+            *(const void **)p->data = BUILDTYPE;
+            p->return_size = strlen(BUILDTYPE);
+        }
+    return ok;
 }
 
 /* The function that tears down this provider */
