@@ -6,45 +6,11 @@ project(
   LANGUAGES C)
 set(CMAKE_C_STANDARD 99)
 
-include(CheckLibraryExists)
-include(CheckFunctionExists)
-
 enable_testing()
 
-find_package(OpenSSL 3.0 REQUIRED)
-
-if (NOT DEFINED OPENSSL_ROOT_DIR)
-  get_filename_component(OPENSSL_ROOT_DIR ${OPENSSL_INCLUDE_DIR} DIRECTORY)
-endif()
-find_program(OPENSSL_PROGRAM openssl
-  PATHS ${OPENSSL_ROOT_DIR} PATH_SUFFIXES apps bin NO_DEFAULT_PATH)
-message("-- Found OpenSSL application: ${OPENSSL_PROGRAM}")
-
-if (DEFINED MSVC_VERSION)
-  # FindOpenSSL.cmake assumes http://www.slproweb.com/products/Win32OpenSSL.html
-  # and gets it quite wrong when an install from OpenSSL source is present
-  if (NOT EXISTS ${OPENSSL_CRYPTO_LIBRARIES})
-    set(OPENSSL_CRYPTO_LIBRARIES
-      ${OPENSSL_ROOT_DIR}/lib/libcrypto.lib)
-  endif()
-  if (NOT EXISTS ${OPENSSL_SSL_LIBRARIES})
-    set(OPENSSL_SSL_LIBRARIES
-      ${OPENSSL_ROOT_DIR}/lib/libssl.lib ${OPENSSL_CRYPTO_LIBRARIES})
-  endif()
-endif()
-
 add_subdirectory(libprov)
-
-# Provider module
-add_library(vigenere MODULE vigenere.c)
-set_target_properties(vigenere PROPERTIES
-  PREFIX "" OUTPUT_NAME "vigenere" SUFFIX ${CMAKE_SHARED_LIBRARY_SUFFIX})
-target_compile_definitions(vigenere PRIVATE
-  VERSION="${CMAKE_PROJECT_VERSION}"
-  BUILDTYPE="${CMAKE_BUILD_TYPE}"
-  )
-target_include_directories(vigenere PRIVATE ${OPENSSL_INCLUDE_DIR})
-target_link_libraries(vigenere PRIVATE libprov)
+include(libprov/cmake/provider.cmake)
+build_provider(vigenere vigenere.c libprov)
 
 # Testing
 set(TEST_ENVIRONMENT
