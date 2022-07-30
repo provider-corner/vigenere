@@ -10,6 +10,11 @@
 #include "prov/err.h"
 #include "prov/num.h"
 
+/* Windows fixups */
+#if defined(_MSC_VER)
+# define strcasecmp _stricmp
+#endif
+
 /*********************************************************************
  *
  *  Errors
