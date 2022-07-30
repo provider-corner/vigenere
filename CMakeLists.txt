@@ -37,8 +37,13 @@ add_test(NAME vigenere_err COMMAND test_vigenere_err)
 set_tests_properties(vigenere_err PROPERTIES ENVIRONMENT "${TEST_ENVIRONMENT}")
 
 # Test with OpenSSL, using TAP
+if (DEFINED MSVC_VERSION)
+  set(PROVE prove.bat)
+else()
+  set(PROVE prove)
+endif()
 add_test(NAME openssl
-  COMMAND prove -PWrapOpenSSL ${CMAKE_CURRENT_SOURCE_DIR}/t)
+  COMMAND ${PROVE} -PWrapOpenSSL ${CMAKE_CURRENT_SOURCE_DIR}/t)
 set_tests_properties(openssl PROPERTIES ENVIRONMENT "${TEST_ENVIRONMENT}")
 
 # No installation instruction, as this should never be used in production
