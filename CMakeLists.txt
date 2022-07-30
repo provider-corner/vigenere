@@ -46,7 +46,8 @@ target_link_libraries(test_vigenere
 add_test(NAME vigenere COMMAND test_vigenere)
 set_tests_properties(vigenere PROPERTIES ENVIRONMENT "${TEST_ENVIRONMENT}")
 
-add_executable(test_vigenere_err test_vigenere_err.c)
+add_executable(test_vigenere_err
+  test_vigenere_err.c ${OPENSSL_APPLINK_SOURCE})
 target_link_libraries(test_vigenere_err
   PRIVATE test_common ${OPENSSL_CRYPTO_LIBRARIES})
 add_test(NAME vigenere_err COMMAND test_vigenere_err)
