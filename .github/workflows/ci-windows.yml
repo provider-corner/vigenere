@@ -7,9 +7,9 @@ jobs:
     strategy:
       matrix:
         platform:
-          - arch: win64
+          - arch: x64
             target: VC-WIN64A
-          - arch: win32
+          - arch: x86
             target: VC-WIN32
     runs-on: windows-latest
     steps:
@@ -44,7 +44,7 @@ jobs:
       - name: configure Vigenere provider
         run: |
           $cwd = Get-Location
-          cmake -DCMAKE_PREFIX_PATH="$cwd\openssl-install" -S . -B _build --log-level DEBUG
+          cmake -A ${{ matrix.platform.arch }} -DCMAKE_PREFIX_PATH="$cwd\openssl-install" -S . -B _build --log-level DEBUG
       - name: build Vigenere provider
         run: cmake --build _build
       - name: test Vigenere provider
