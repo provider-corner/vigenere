@@ -22,9 +22,6 @@ jobs:
       - uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: ${{ matrix.platform.arch }}
-      - uses: ilammy/setup-nasm@v1
-        with:
-          platform: ${{ matrix.platform.arch }}
       - name: install cpanm and Test2::V0
         uses: perl-actions/install-with-cpanm@v1
         with:
@@ -42,7 +39,7 @@ jobs:
         run: |
           $cwd = Get-Location
           mkdir ..\openssl-install
-          perl Configure ${{matrix.platform.target}} --prefix="$cwd\..\openssl-install"
+          perl Configure ${{matrix.platform.target}} --prefix="$cwd\..\openssl-install" no-asm
         working-directory: openssl
       - name: build+install OpenSSL
         run: nmake /S install_sw
