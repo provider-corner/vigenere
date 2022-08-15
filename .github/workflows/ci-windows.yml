@@ -1,6 +1,12 @@
 name: Windows GitHub CI
 
-on: [pull_request, push]
+on:
+  pull_request: []
+  push: []
+  schedule:
+    # Run this experiment every 4th hour
+    # * is a special character in YAML so you have to quote this string
+    - cron:  '* */8 * * *'
 
 jobs:
   build-and-test-vigenere:
