@@ -10,6 +10,7 @@ enable_testing()
 
 add_subdirectory(libprov)
 include(libprov/cmake/provider.cmake)
+setup_provider_openssl()
 build_provider(vigenere vigenere.c libprov)
 
 # Testing
@@ -42,14 +43,19 @@ target_include_directories(test_common PUBLIC ${OPENSSL_INCLUDE_DIR})
 
 add_executable(test_vigenere test_vigenere.c)
 target_link_libraries(test_vigenere
-  PRIVATE test_common ${OPENSSL_CRYPTO_LIBRARIES})
+  PRIVATE test_common OpenSSL::Crypto)
 add_test(NAME vigenere COMMAND test_vigenere)
 set_tests_properties(vigenere PROPERTIES ENVIRONMENT "${TEST_ENVIRONMENT}")
 
 add_executable(test_vigenere_err
-  test_vigenere_err.c ${OPENSSL_APPLINK_SOURCE})
-target_link_libraries(test_vigenere_err
-  PRIVATE test_common ${OPENSSL_CRYPTO_LIBRARIES})
+  test_vigenere_err.c)
+if (MSVC)
+  target_link_libraries(test_vigenere_err
+    PRIVATE test_common OpenSSL::Crypto OpenSSL::applink)
+else ()
+  target_link_libraries(test_vigenere_err
+    PRIVATE test_common OpenSSL::Crypto)
+endif ()
 add_test(NAME vigenere_err COMMAND test_vigenere_err)
 set_tests_properties(vigenere_err PROPERTIES ENVIRONMENT "${TEST_ENVIRONMENT}")
 
