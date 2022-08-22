@@ -13,7 +13,7 @@ include(libprov/cmake/provider.cmake)
 build_provider(vigenere vigenere.c libprov)
 
 # Testing
-if (DEFINED MSVC_VERSION)
+if (MSVC)
   # This is frustrating!  I've tried guessing at all sorts of variables,
   # as well as getting the target property LIBRARY_OUTPUT_DIRECTORY using
   # get_target_property() as well as generator expressions, but to not avail.
@@ -54,7 +54,7 @@ add_test(NAME vigenere_err COMMAND test_vigenere_err)
 set_tests_properties(vigenere_err PROPERTIES ENVIRONMENT "${TEST_ENVIRONMENT}")
 
 # Test with OpenSSL, using TAP
-if (DEFINED MSVC_VERSION)
+if (MSVC)
   set(PROVE prove.bat)
 else()
   set(PROVE prove)
