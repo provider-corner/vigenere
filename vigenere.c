@@ -181,7 +181,7 @@ static int vigenere_encrypt_init(void *vctx,
     struct vigenere_ctx_st *ctx = vctx;
 
     if (key != NULL) {
-        if (keyl == (size_t)-1) {
+        if (keyl == (size_t)-1 || keyl == 0) {
             ERR_raise(ERR_HANDLE(ctx), VIGENERE_NO_KEYLEN_SET);
             return 0;
         }
@@ -206,7 +206,7 @@ static int vigenere_decrypt_init(void *vctx,
     size_t i;
 
     if (key != NULL) {
-        if (keyl == (size_t)-1) {
+        if (keyl == (size_t)-1 || keyl == 0) {
             ERR_raise(ERR_HANDLE(ctx), VIGENERE_NO_KEYLEN_SET);
             return 0;
         }
