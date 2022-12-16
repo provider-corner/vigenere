@@ -93,13 +93,32 @@ static OSSL_FUNC_cipher_get_ctx_params_fn vigenere_get_ctx_params;
 static OSSL_FUNC_cipher_settable_ctx_params_fn vigenere_settable_ctx_params;
 static OSSL_FUNC_cipher_gettable_ctx_params_fn vigenere_gettable_ctx_params;
 
+#define DEFAULT_KEYLENGTH 16    /* amount of bytes == 128 bits */
+#define BLOCKSIZE 1             /* amount of bytes */
+
+/* Helper function to determine the key length */
+static size_t keylen()
+{
+    /*
+     * Give the user a chance to decide a default.
+     * With 'openssl enc', this is the only viable way for the user
+     * to set an arbitrary key length.
+     * Note that the length is expressed in bytes.
+     */
+    const char *user_keyl = getenv("VIGENERE_KEYLEN");
+    size_t keyl = DEFAULT_KEYLENGTH;
+
+    if (user_keyl != NULL)
+        keyl = strtoul(user_keyl, NULL, 0);
+    return keyl;
+}
+
 /*
  * The context used throughout all these functions.
  */
 struct vigenere_ctx_st {
     struct provider_ctx_st *provctx;
 
-#define DEFAULT_KEYLENGTH 16    /* amount of bytes == 128 bits */
     size_t keyl;                /* The configured length of the key */
 
     unsigned char *key;         /* A copy of the key */
@@ -116,7 +135,7 @@ static void *vigenere_newctx(void *vprovctx)
     if (ctx != NULL) {
         memset(ctx, 0, sizeof(*ctx));
         ctx->provctx = vprovctx;
-        ctx->keyl = DEFAULT_KEYLENGTH;
+        ctx->keyl = keylen();
     }
     return ctx;
 }
@@ -142,9 +161,9 @@ static void *vigenere_dupctx(void *vctx)
     if (src == NULL
         || (dst = vigenere_newctx(NULL)) == NULL)
 
+    dst->provctx = src->provctx;
     dst->provctx->proverr_handle =
         proverr_dup_handle(src->provctx->proverr_handle);
-    dst->provctx = src->provctx;
     dst->keyl = src->keyl;
 
     if (src->key != NULL) {
@@ -279,17 +298,7 @@ static int vigenere_get_params(OSSL_PARAM params[])
                 continue;
             }
         if (strcasecmp(p->key, "keylen") == 0) {
-            size_t keyl = DEFAULT_KEYLENGTH;
-            /*
-             * Give the user a chance to decide, note that the length is
-             * expressed in bytes
-             */
-            const char *user_keyl = getenv("VIGENERE_KEYLEN");
-
-            if (user_keyl != NULL)
-                keyl = strtoul(user_keyl, NULL, 0);
-
-            if (provnum_set_size_t(p, keyl) < 0) {
+            if (provnum_set_size_t(p, keylen()) < 0) {
                 ok = 0;
                 continue;
             }
