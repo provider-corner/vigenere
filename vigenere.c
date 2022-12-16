@@ -122,6 +122,7 @@ struct vigenere_ctx_st {
     size_t keyl;                /* The configured length of the key */
 
     unsigned char *key;         /* A copy of the key */
+    size_t keysize;             /* Size of the key currently used */
     size_t keypos;              /* The current position in the key */
     int enc;                    /* 0 = decrypt, 1 = encrypt */
     int ongoing;                /* 1 = operation has started */
@@ -207,7 +208,7 @@ static int vigenere_encrypt_init(void *vctx,
         free(ctx->key);
         ctx->key = malloc(keyl);
         memcpy(ctx->key, key, keyl);
-        ctx->keyl = keyl;
+        ctx->keysize = keyl;
     }
     ctx->keypos = 0;
     ctx->ongoing = 0;
@@ -233,7 +234,7 @@ static int vigenere_decrypt_init(void *vctx,
         ctx->key = malloc(keyl);
         for (i = 0; i < keyl; i++)
             ctx->key[i] = 256 - key[i];
-        ctx->keyl = keyl;
+        ctx->keysize = keyl;
     }
     ctx->keypos = 0;
     ctx->ongoing = 0;
@@ -249,14 +250,19 @@ static int vigenere_update(void *vctx,
     assert(outsz >= inl);
     assert(out != NULL);
     assert(outl != NULL);
+#if 0
     if (outsz < inl || out == NULL)
         return 0;
+#else
+    if (out == NULL)
+        return 0;
+#endif
 
     ctx->ongoing = 1;
     *outl = 0;
     for (; inl-- > 0; (*outl)++) {
         *out++ = (*in++ + ctx->key[ctx->keypos++]) % 256;
-        if (ctx->keypos >= ctx->keyl)
+        if (ctx->keypos >= ctx->keysize)
             ctx->keypos = 0;
     }
 
