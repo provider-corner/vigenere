@@ -59,6 +59,21 @@ endif ()
 add_test(NAME vigenere_err COMMAND test_vigenere_err)
 set_tests_properties(vigenere_err PROPERTIES ENVIRONMENT "${TEST_ENVIRONMENT}")
 
+if (MSVC)
+  if (NOT OPENSSL_CRYPTO_DLL STREQUAL "OPENSSL_CRYPTO_DLL-NOTFOUND")
+    add_custom_command(
+      TARGET test_vigenere POST_BUILD
+      COMMAND cmake -E copy
+        "${OPENSSL_CRYPTO_DLL}"
+        "${VIGENERE_MODULE_DIRECTORY}/${OPENSSL_CRYPTO_DLL_NAME}.dll")
+    add_custom_command(
+      TARGET test_vigenere_err POST_BUILD
+      COMMAND cmake -E copy
+        "${OPENSSL_CRYPTO_DLL}"
+        "${VIGENERE_MODULE_DIRECTORY}/${OPENSSL_CRYPTO_DLL_NAME}.dll")
+  endif()
+endif()
+
 # Test with OpenSSL, using TAP
 if (MSVC)
   set(PROVE prove.bat)
