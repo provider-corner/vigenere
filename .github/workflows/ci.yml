@@ -32,6 +32,7 @@ jobs:
         run: |
           mkdir ../openssl-install
           ./Configure --prefix=$(cd ..; pwd)/openssl-install --libdir=lib
+          ./configdata.pm --dump
         working-directory: openssl
       - name: build+install OpenSSL
         run: make -s install_sw
