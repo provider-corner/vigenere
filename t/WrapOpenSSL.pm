@@ -26,7 +26,7 @@ sub load {
         if $ENV{OPENSSL_PROGRAM};
     my $openssl_rootdir = $ENV{OPENSSL_ROOT_DIR};
     my $openssl_rootdir_is_buildtree =
-        $openssl_rootdir && -d catdir($openssl_rootdir, 'configdata.pm');
+        $openssl_rootdir && -f catfile($openssl_rootdir, 'configdata.pm');
 
     unless ($openssl_libdir) {
         $openssl_libdir = $openssl_rootdir_is_buildtree
