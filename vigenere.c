@@ -407,7 +407,7 @@ static const OSSL_DISPATCH vigenere_functions[] = {
 
 /* The table of ciphers this provider offers */
 static const OSSL_ALGORITHM vigenere_ciphers[] = {
-    { "vigenere:1.3.6.1.4.1.5168.4711.22087.1", "x.author=" AUTHOR,
+    { "vigenere:1.3.6.1.4.1.5168.4711.22087.1", "x.author='" AUTHOR "'",
       vigenere_functions },
     { NULL, NULL, NULL }
 };
