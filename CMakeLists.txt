@@ -1,10 +1,12 @@
 cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 project(
   vigenere-provider
-  VERSION 1.1
+  VERSION 1.2
   DESCRIPTION "A very small demonstration that shows the minimum required things for a cipher in an OpenSSL 3.0 module, including provider specific error reasons."
   LANGUAGES C)
 set(CMAKE_C_STANDARD 99)
+# I use my github handle here
+add_compile_definitions(AUTHOR="@levitte")
 
 enable_testing()
 

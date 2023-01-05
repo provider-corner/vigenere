@@ -407,8 +407,9 @@ static const OSSL_DISPATCH vigenere_functions[] = {
 
 /* The table of ciphers this provider offers */
 static const OSSL_ALGORITHM vigenere_ciphers[] = {
-    { "vigenere:1.3.6.1.4.1.5168.4711.22087.1", NULL, vigenere_functions },
-    { NULL , NULL, NULL }
+    { "vigenere:1.3.6.1.4.1.5168.4711.22087.1", "x.author=" AUTHOR,
+      vigenere_functions },
+    { NULL, NULL, NULL }
 };
 
 /* The function that returns the appropriate algorithm table per operation */
@@ -439,9 +440,13 @@ static int vigenere_prov_get_params(void *provctx, OSSL_PARAM *params)
             *(const void **)p->data = VERSION;
             p->return_size = strlen(VERSION);
         } else if (strcasecmp(p->key, "buildinfo") == 0
-                 && BUILDTYPE[0] != '\0') {
+                   && BUILDTYPE[0] != '\0') {
             *(const void **)p->data = BUILDTYPE;
             p->return_size = strlen(BUILDTYPE);
+        } else if (strcasecmp(p->key, "author") == 0
+                   && AUTHOR[0] != '\0') {
+            *(const void **)p->data = AUTHOR;
+            p->return_size = strlen(AUTHOR);
         }
     return ok;
 }
