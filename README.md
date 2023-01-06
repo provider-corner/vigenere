@@ -23,7 +23,7 @@ If you want to use this for real, go back to the 16th century :wink:
 Documentation
 -------------
 
-Detailed user documentation can be found in [vigenere.md].
+Detailed user documentation can be found in [vigenere.md](vigenere.md).
 
 Building
 --------
