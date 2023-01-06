@@ -20,6 +20,33 @@ not be used in a real situation, but the implementation can be used as
 a template for other cipher providers to start from.
 If you want to use this for real, go back to the 16th century :wink:
 
+Documentation
+-------------
+
+Detailed user documentation can be found in [vigenere.md].
+
+Building
+--------
+
+Building this provider requires [cmake](https://cmake.org) and a
+building toolchain that it supports.
+
+Simple configuration, for a system installation of OpenSSL 3:
+
+    cmake -S . -B _build
+
+If you have OpenSSL 3 installed somewhere else, do the following
+instead, with `{path}` replaced with the directory of an OpenSSL 3
+*installation*:
+
+    cmake -DCMAKE_PREFIX_PATH={path} -S . -B _build
+
+To build, do this:
+
+    cmake --build _build
+
+The result is `_build/vigenere.so` or `_build/Debug/vigenere.dll`.
+
 <!-- Logos and Badges -->
 
 [github actions ci badge]:
