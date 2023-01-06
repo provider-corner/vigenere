@@ -108,10 +108,19 @@ the current directory.
 -   Listing the algorithm:
 
     ``` console
-    $ openssl list -provider-path . -provider vigenere -cipher-algorithms
+    $ openssl list -provider-path . -provider vigenere \
+        -cipher-algorithms -verbose
     ...
     Provided:
       { 1.3.6.1.4.1.5168.4711.22087.1, vigenere } @ vigenere
+        description: undefined
+        retrievable algorithm parameters:
+          blocksize: unsigned integer (max 8 bytes large)
+          keylen: unsigned integer (max 8 bytes large)
+        retrievable operation parameters:
+          keylen: unsigned integer (max 8 bytes large)
+        settable operation parameters:
+          keylen: unsigned integer (max 8 bytes large)
     ```
 
 -   Encryption with the standard key length (128 bits, i.e. 16 bytes):
