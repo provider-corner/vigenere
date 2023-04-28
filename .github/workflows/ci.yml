@@ -20,11 +20,11 @@ jobs:
         with:
           install: Test2::V0
       - name: checkout vigenere
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: true
       - name: checkout OpenSSL
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: openssl/openssl
           path: openssl
