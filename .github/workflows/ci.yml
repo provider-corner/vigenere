@@ -13,6 +13,11 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-latest, macos-latest ]
+        openssl:
+          - repository: openssl/openssl
+            ref: ''
+          - repository: levitte/openssl
+            ref: cleanup-exports
     runs-on: ${{matrix.os}}
     steps:
       - name: install cpanm and Test2::V0
@@ -26,7 +31,8 @@ jobs:
       - name: checkout OpenSSL
         uses: actions/checkout@v3
         with:
-          repository: openssl/openssl
+          repository: ${{matrix.openssl.repository}}
+          ref: ${{matrix.openssl.ref}}
           path: openssl
       - name: configure OpenSSL with compiler ${{matrix.compiler}}
         run: |
@@ -38,7 +44,8 @@ jobs:
         run: make -s install_sw
         working-directory: openssl
       - name: configure Vigenere provider with compiler ${{matrix.compiler}}
-        run: cmake -DCMAKE_PREFIX_PATH="$(pwd)/openssl-install"
+        run: cmake -DCMAKE_FIND_PACKAGE_PREFER_CONFIG="TRUE"
+                   -DCMAKE_PREFIX_PATH="$(pwd)/openssl-install"
                    -S . -B _build
       - name: build Vigenere provider
         run: cmake --build _build

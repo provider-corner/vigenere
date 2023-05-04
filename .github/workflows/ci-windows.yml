@@ -19,6 +19,11 @@ jobs:
           - msvc-arch: x86
             cmake-arch: Win32
             openssl-target: VC-WIN32
+        openssl:
+          - repository: openssl/openssl
+            ref: ''
+          - repository: levitte/openssl
+            ref: cleanup-exports
     runs-on: windows-latest
     steps:
       - name: install MSVC for ${{ matrix.platform.msvc-arch }}
@@ -36,7 +41,8 @@ jobs:
       - name: checkout OpenSSL
         uses: actions/checkout@v3
         with:
-          repository: openssl/openssl
+          repository: ${{matrix.openssl.repository}}
+          ref: ${{matrix.openssl.ref}}
           path: openssl
       - name: configure OpenSSL for ${{matrix.platform.openssl-target}}
         run: |
@@ -51,7 +57,7 @@ jobs:
       - name: configure Vigenere provider for ${{ matrix.platform.cmake-arch }}
         run: |
           $cwd = Get-Location
-          cmake -A ${{ matrix.platform.cmake-arch }} -DCMAKE_PREFIX_PATH="$cwd\openssl-install" -S . -B _build --log-level DEBUG
+          cmake -A ${{ matrix.platform.cmake-arch }} -DCMAKE_FIND_PACKAGE_PREFER_CONFIG="TRUE" -DCMAKE_PREFIX_PATH="$cwd\openssl-install" -S . -B _build --log-level DEBUG
       - name: build Vigenere provider
         run: cmake --build _build --config Release
       - name: test Vigenere provider
