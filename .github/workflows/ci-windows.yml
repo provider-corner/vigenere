@@ -53,7 +53,7 @@ jobs:
           $cwd = Get-Location
           cmake -A ${{ matrix.platform.cmake-arch }} -DCMAKE_PREFIX_PATH="$cwd\openssl-install" -S . -B _build --log-level DEBUG
       - name: build Vigenere provider
-        run: cmake --build _build
+        run: cmake --build _build --config Release
       - name: test Vigenere provider
-        run: ctest -VV -C Debug
+        run: ctest -VV -C Release
         working-directory: _build
