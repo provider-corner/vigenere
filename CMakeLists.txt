@@ -16,21 +16,14 @@ setup_provider_openssl()
 build_provider(vigenere vigenere.c libprov)
 
 # Testing
-if (MSVC)
-  # This is frustrating!  I've tried guessing at all sorts of variables,
-  # as well as getting the target property LIBRARY_OUTPUT_DIRECTORY using
-  # get_target_property() as well as generator expressions, but to not avail.
-  # So for now, the MODULES path gets hardcoded from observed builds.
-  if (NOT CMAKE_BUILD_TYPE)
-    # From observation, it seems that Debug is the default
-    set(VIGENERE_MODULE_DIRECTORY "${CMAKE_BINARY_DIR}/Debug")
-  else()
-    set(VIGENERE_MODULE_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}")
-  endif()
+get_property(_is_multiconfig GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+if (_is_multiconfig)
+  set(VIGENERE_MODULE_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIG>")
 else()
   set(VIGENERE_MODULE_DIRECTORY "${CMAKE_BINARY_DIR}")
 endif()
-message(STATUS "Determined the Vigenere provider location to '${VIGENERE_MODULE_DIRECTORY}'")
+unset(_is_multiconfig)
+message(STATUS "Determined the build time Vigenere provider location to be '${VIGENERE_MODULE_DIRECTORY}'")
 
 set(TEST_ENVIRONMENT
   "BUILD_TYPE=${CMAKE_BUILD_TYPE}"
@@ -62,7 +55,7 @@ endif ()
 add_test(NAME vigenere_err COMMAND test_vigenere_err)
 set_tests_properties(vigenere_err PROPERTIES ENVIRONMENT "${TEST_ENVIRONMENT}")
 
-if (MSVC)
+if (WIN32)
   if (DEFINED OPENSSL_LIBCRYPTO_SHARED)
     cmake_path(GET OPENSSL_LIBCRYPTO_SHARED STEM OPENSSL_LIBCRYPTO_SHARED_NAME)
     add_custom_command(
