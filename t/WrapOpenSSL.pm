@@ -18,26 +18,12 @@ sub load {
     $app->verbose( $verbose );
 
     print STDERR "$_=", $ENV{$_} // '', "\n"
-        foreach qw(OPENSSL_CRYPTO_LIBRARY OPENSSL_PROGRAM OPENSSL_ROOT_DIR);
+        foreach qw(OPENSSL_MODULES OPENSSL_PROGRAM
+                   OPENSSL_LIBRARY_DIR OPENSSL_RUNTIME_DIR
+                   SOURCEDIR PERL5LIB);
 
-    my $openssl_libdir = dirname($ENV{OPENSSL_CRYPTO_LIBRARY})
-        if $ENV{OPENSSL_CRYPTO_LIBRARY};
-    my $openssl_bindir = dirname($ENV{OPENSSL_PROGRAM})
-        if $ENV{OPENSSL_PROGRAM};
-    my $openssl_rootdir = $ENV{OPENSSL_ROOT_DIR};
-    my $openssl_rootdir_is_buildtree =
-        $openssl_rootdir && -f catfile($openssl_rootdir, 'configdata.pm');
-
-    unless ($openssl_libdir) {
-        $openssl_libdir = $openssl_rootdir_is_buildtree
-            ? $openssl_rootdir
-            : catdir($openssl_rootdir, 'lib');
-    }
-    unless ($openssl_bindir) {
-        $openssl_bindir = $openssl_rootdir_is_buildtree
-            ? catdir($openssl_rootdir, 'apps')
-            : catdir($openssl_rootdir, 'bin');
-    }
+    my $openssl_bindir = $ENV{OPENSSL_RUNTIME_DIR};
+    my $openssl_libdir = $ENV{OPENSSL_LIBRARY_DIR};
 
     if ($openssl_libdir) {
         # Variants of library paths
