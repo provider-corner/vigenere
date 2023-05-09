@@ -13,7 +13,18 @@ enable_testing()
 add_subdirectory(libprov)
 include(libprov/cmake/provider.cmake)
 setup_provider_openssl()
-build_provider(vigenere vigenere.c libprov)
+
+add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/v_params.c
+                          ${CMAKE_CURRENT_SOURCE_DIR}/v_params.h
+                   COMMAND perl ${CMAKE_CURRENT_SOURCE_DIR}/libprov/perl/gen_param_LL.pl
+                           ${CMAKE_CURRENT_SOURCE_DIR}/v_params.c
+                           ${CMAKE_CURRENT_SOURCE_DIR}/v_params.h
+                           ${CMAKE_CURRENT_SOURCE_DIR}/vigenere_params.dat
+                   MAIN_DEPENDENCY vigenere_params.dat
+                   DEPENDS libprov/perl/gen_param_LL.pl)
+
+set(vigenere_source vigenere.c v_params.c)
+build_provider(vigenere "${vigenere_source}" libprov)
 
 # Testing
 get_property(_is_multiconfig GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)

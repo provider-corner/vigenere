@@ -9,11 +9,7 @@
 
 #include "prov/err.h"
 #include "prov/num.h"
-
-/* Windows fixups */
-#if defined(_MSC_VER)
-# define strcasecmp _stricmp
-#endif
+#include "v_params.h"
 
 /*********************************************************************
  *
@@ -297,26 +293,22 @@ static int vigenere_get_params(OSSL_PARAM params[])
     OSSL_PARAM *p;
     int ok = 1;
 
-    for (p = params; p->key != NULL; p++) {
-        if (strcasecmp(p->key, "blocksize") == 0)
-            if (provnum_set_size_t(p, 1) < 0) {
-                ok = 0;
-                continue;
-            }
-        if (strcasecmp(p->key, "keylen") == 0) {
-            if (provnum_set_size_t(p, keylen()) < 0) {
-                ok = 0;
-                continue;
-            }
+    for (p = params; p->key != NULL; p++)
+        switch (vigenere_params_parse(p->key)) {
+        case V_PARAM_blocksize:
+            ok &= provnum_set_size_t(p, 1) >= 0;
+            break;
+        case V_PARAM_keylen:
+            ok &= provnum_set_size_t(p, keylen()) >= 0;
+            break;
         }
-    }
     return ok;
 }
 
 static const OSSL_PARAM *vigenere_gettable_ctx_params(void *cctx, void *provctx)
 {
     static const OSSL_PARAM table[] = {
-        { "keylen", OSSL_PARAM_UNSIGNED_INTEGER, NULL, sizeof(size_t), 0 },
+        { S_PARAM_keylen, OSSL_PARAM_UNSIGNED_INTEGER, NULL, sizeof(size_t), 0 },
         { NULL, 0, NULL, 0, 0 },
     };
 
@@ -332,10 +324,10 @@ static int vigenere_get_ctx_params(void *vctx, OSSL_PARAM params[])
         OSSL_PARAM *p;
 
         for (p = params; p->key != NULL; p++)
-            if (strcasecmp(p->key, "keylen") == 0
-                && provnum_set_size_t(p, ctx->keyl) < 0) {
-                ok = 0;
-                continue;
+            switch (vigenere_params_parse(p->key)) {
+            case V_PARAM_keylen:
+                ok &= provnum_set_size_t(p, ctx->keyl) >= 0;
+                break;
             }
     }
     return ok;
@@ -345,7 +337,7 @@ static int vigenere_get_ctx_params(void *vctx, OSSL_PARAM params[])
 static const OSSL_PARAM *vigenere_settable_ctx_params(void *cctx, void *provctx)
 {
     static const OSSL_PARAM table[] = {
-        { "keylen", OSSL_PARAM_UNSIGNED_INTEGER, NULL, sizeof(size_t), 0 },
+        { S_PARAM_keylen, OSSL_PARAM_UNSIGNED_INTEGER, NULL, sizeof(size_t), 0 },
         { NULL, 0, NULL, 0, 0 },
     };
 
@@ -364,14 +356,16 @@ static int vigenere_set_ctx_params(void *vctx, const OSSL_PARAM params[])
     }
 
     for (p = params; p->key != NULL; p++)
-        if (strcasecmp(p->key, "keylen") == 0) {
+        switch (vigenere_params_parse(p->key)) {
+        case V_PARAM_keylen:
+        {
             size_t keyl = 0;
+            int res = provnum_get_size_t(&keyl, p) >= 0;
 
-            if (provnum_get_size_t(&keyl, p) < 0) {
-                ok = 0;
-                continue;
-            }
-            ctx->keyl = keyl;
+            ok &= res;
+            if (res)
+                ctx->keyl = keyl;
+        }
         }
     return ok;
 }
@@ -436,17 +430,23 @@ static int vigenere_prov_get_params(void *provctx, OSSL_PARAM *params)
     int ok = 1;
 
     for(p = params; p->key != NULL; p++)
-        if (strcasecmp(p->key, "version") == 0) {
+        switch (vigenere_params_parse(p->key)) {
+        case V_PARAM_version:
             *(const void **)p->data = VERSION;
             p->return_size = strlen(VERSION);
-        } else if (strcasecmp(p->key, "buildinfo") == 0
-                   && BUILDTYPE[0] != '\0') {
-            *(const void **)p->data = BUILDTYPE;
-            p->return_size = strlen(BUILDTYPE);
-        } else if (strcasecmp(p->key, "author") == 0
-                   && AUTHOR[0] != '\0') {
-            *(const void **)p->data = AUTHOR;
-            p->return_size = strlen(AUTHOR);
+            break;
+        case V_PARAM_buildinfo:
+            if (BUILDTYPE[0] != '\0') {
+                *(const void **)p->data = BUILDTYPE;
+                p->return_size = strlen(BUILDTYPE);
+            }
+            break;
+        case V_PARAM_author:
+            if (AUTHOR[0] != '\0') {
+                *(const void **)p->data = AUTHOR;
+                p->return_size = strlen(AUTHOR);
+            }
+            break;
         }
     return ok;
 }
