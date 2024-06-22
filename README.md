@@ -25,6 +25,16 @@ Documentation
 
 Detailed user documentation can be found in [vigenere.md](vigenere.md).
 
+Setup source code directory
+---------------------------
+
+To complete the source repository, all git submodules must be up to date
+too.  The first time, they need to be initialized too, as follows:
+
+    git submodule update --init
+
+The next time, `--init` can be skipped.
+
 Building
 --------
 
