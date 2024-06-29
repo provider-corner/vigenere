@@ -57,6 +57,51 @@ To build, do this:
 
 The result is `_build/vigenere.so` or `_build/Debug/vigenere.dll`.
 
+Using
+-----
+
+OpenSSL provides a number of ways to specify where a module can be
+found:
+
+- Command line options for relevant `openssl` subcommands.
+  Specifically, `-provider-path` and `-provider` options should be
+  combined to add another path to look for provider modules, and the
+  name of a provider to be loaded.
+
+  ``` console
+  $ echo "The quick brown fox jumps over the lazy dog" \
+    | openssl enc -provider-path _build -provider vigenere \
+                  -e -vigenere -K 0123456789ABCDEF0123456789ABCDEF \
+    | od -tx1
+  0000000 55 8b aa 87 fa 20 36 52 6c 43 a7 d9 f8 22 3b 0f
+  0000020 67 92 bd 87 f3 20 3a 5f 74 43 b4 dd ee 1d ed 63
+  0000040 69 88 65 d3 ea 25 46 0f 65 92 ac 71
+  0000054
+  ```
+
+  Ref: [openssl(1)](https://www.openssl.org/docs/man3.0/man1/openssl.html#Provider-Options)
+
+- The environment variable `OPENSSL_MODULES`, which works for any
+  program that links OpenSSL's libcrypto.
+
+  ``` console
+  $ export OPENSSL_MODULES=_build
+  $ echo "The quick brown fox jumps over the lazy dog" \
+    | openssl enc -provider vigenere -e -vigenere -K 0123456789ABCDEF0123456789ABCDEF \
+    | od -tx1
+  0000000 55 8b aa 87 fa 20 36 52 6c 43 a7 d9 f8 22 3b 0f
+  0000020 67 92 bd 87 f3 20 3a 5f 74 43 b4 dd ee 1d ed 63
+  0000040 69 88 65 d3 ea 25 46 0f 65 92 ac 71
+  0000054
+  ```
+
+  Ref: [openssl-env(7)](https://www.openssl.org/docs/man3.0/man7/openssl-env.html#OPENSSL_MODULES)
+
+- Programmatically, if you want to do in your program what
+  `-provider-path` does in `openssl` subcommands.
+
+  Ref: [OSSL\_PROVIDER(3)](https://www.openssl.org/docs/man3.0/man3/OSSL_PROVIDER.html)
+
 <!-- Logos and Badges -->
 
 [github actions ci badge]:
